@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pic"
+version = "0.1.0"
+description = "Run the pi coding agent inside a container (guix, OCI) from any project"
+requires-python = ">=3.11"
+
+[project.scripts]
+pic = "pic.cli:main"
+pic-shell = "pic.cli:shell_main"
+
+[tool.setuptools]
+packages = ["pic", "pic.backends"]
+
+[tool.setuptools.data-files]
+"share/pic/guix" = ["guix/manifest.scm"]
