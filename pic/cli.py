@@ -1,4 +1,4 @@
-"""pic — run the pi coding agent inside a container, from any project.
+"""pic — run the pi coding agent inside a container.
 
 "pi in container".  pic owns the arguments before a bare `--`; everything
 after it goes verbatim to the inner command, which defaults to `pi`

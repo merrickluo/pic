@@ -1,6 +1,6 @@
 # pic — the pi coding agent inside a container
 
-`pic` runs the pi coding agent in a container from any project directory.
+`pic` runs the pi coding agent inside a container.
 `pic-shell` is the same, with `bash` as the inner command.
 
 ## Usage

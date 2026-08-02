@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pic"
 version = "0.1.0"
-description = "Run the pi coding agent inside a container (guix, OCI) from any project"
+description = "Run the pi coding agent inside a container (guix, OCI)"
 requires-python = ">=3.11"
 
 [dependency-groups]

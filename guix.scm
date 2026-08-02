@@ -25,6 +25,6 @@
   (synopsis "Run the pi coding agent inside a container")
   (description
    "pic runs the pi coding agent in a container (guix shell -C or an OCI
-runtime) from any project directory.  It owns the arguments before a
+runtime).  It owns the arguments before a
 bare @code{--}; everything after goes verbatim to the inner command.")
   (license license:expat))
