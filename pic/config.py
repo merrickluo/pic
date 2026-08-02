@@ -26,15 +26,8 @@ DEFAULT_SHARES = [
     "/tmp",
     "~/.agents",
     "~/.pi",
-    "~/.config/fish",
-    "~/.config/starship.toml",
-    "~/.gnupg",
-    "/run/user/{uid}/gnupg",
-    "/run/user/{uid}/emacs",
     "~/.ssh",
-    "~/.config/herdr",
     "~/.gitconfig",
-    "/var/guix/daemon-socket",
 ]
 
 #: Default environment variable regexps passed into the container:
