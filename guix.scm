@@ -9,6 +9,7 @@
 
 (use-modules (gnu packages check)
              (gnu packages python-build)
+             (gnu packages rust-apps)
              (guix build-system pyproject)
              (guix gexp)
              (guix packages)
@@ -19,8 +20,8 @@
   (version "0.1.0")
   (source (local-file "." "pic" #:recursive? #t))
   (build-system pyproject-build-system)
-  (native-inputs (list python-pytest python-setuptools python-wheel))
-  (home-page ""https://example.org/pic")
+  (native-inputs (list python-pytest python-setuptools python-wheel uv))
+  (home-page "https://example.org/pic")
   (synopsis "Run the pi coding agent inside a container")
   (description
    "pic runs the pi coding agent in a container (guix shell -C or an OCI

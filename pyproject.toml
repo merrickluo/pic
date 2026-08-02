@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Run the pi coding agent inside a container (guix, OCI) from any project"
 requires-python = ">=3.11"
 
+[dependency-groups]
+dev = ["pytest>=8"]
+
 [project.scripts]
 pic = "pic.cli:main"
 pic-shell = "pic.cli:shell_main"

@@ -104,6 +104,10 @@ pic/
 
 ## Testing
 
-`pytest` from this directory. Covered: the `--` routing contract, config
-precedence, share expansion, golden-argv for both backends, env
-expansion, backend selection.
+```
+uv sync        # create .venv once
+uv run pytest  # run the suite
+```
+
+Covered: the `--` routing contract, config precedence, share expansion,
+golden-argv for both backends, env expansion, backend selection.
