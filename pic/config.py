@@ -43,6 +43,7 @@ class Config:
     """Merged configuration; the single object backends read from."""
 
     backend: str = "auto"                      # guix | oci | auto
+    command: str = "pi"                        # default inner command
     extra_shares: list[str] = field(default_factory=list)
     extra_preserves: list[str] = field(default_factory=list)
     runtime: str | None = None                 # --runtime / PIC_RUNTIME
@@ -81,6 +82,8 @@ def _apply_toml(cfg, data, source):
     pic = data.get("pic", {})
     if "backend" in pic:
         cfg.backend = str(pic["backend"])
+    if "command" in pic:
+        cfg.command = str(pic["command"])
     if "no_project" in pic:
         cfg.no_project = bool(pic["no_project"])
     shares = data.get("shares", {})
@@ -110,6 +113,8 @@ def _apply_toml(cfg, data, source):
 def _apply_env(cfg, env):
     if env.get("PIC_BACKEND"):
         cfg.backend = env["PIC_BACKEND"]
+    if env.get("PIC_COMMAND"):
+        cfg.command = env["PIC_COMMAND"]
     for entry in env.get("PIC_SHARE", "").split(":"):
         if entry:
             cfg.extra_shares.append(entry)
@@ -124,6 +129,8 @@ def _apply_env(cfg, env):
 def _apply_cli(cfg, parsed):
     if parsed.backend:
         cfg.backend = parsed.backend
+    if parsed.command:
+        cfg.command = parsed.command
     cfg.extra_shares += parsed.shares
     cfg.extra_preserves += parsed.preserves
     if parsed.runtime:

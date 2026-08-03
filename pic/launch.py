@@ -16,8 +16,7 @@ def run_pic(parsed, env=None):
     config = load_config(parsed.project_dir, env=env, parsed=parsed)
     backend = select_backend(config, env)
     spec = assemble(config, parsed.project_dir,
-                    inner_command(parsed.command or "pi", parsed.inner),
-                    env=env)
+                    inner_command(config.command, parsed.inner), env=env)
     if not config.no_project:
         spec.project = backend.project_env(spec.workspace, config)
     try:

@@ -21,6 +21,7 @@ def load(project_dir=None, env=None, parsed=None):
 def test_builtin_defaults():
     cfg = load()
     assert cfg.backend == "auto"
+    assert cfg.command == "pi"
     assert cfg.guix_profile == "~/.guix-home/extra-profiles/agent"
     assert cfg.oci_image == "ghcr.io/meex/pi-agent:latest"
     assert any("~/.agents" in s for s in cfg.shares)
@@ -79,6 +80,28 @@ def test_bad_toml_dies(tmp_path, capsys):
         load(project_dir=str(tmp_path))
     assert exc.value.code == 1
     assert "bad configuration file" in capsys.readouterr().err
+
+
+# --- default command ------------------------------------------------
+
+def test_toml_command(tmp_path):
+    write_toml(tmp_path / "pic.toml", '[pic]\ncommand = "claude"\n')
+    cfg = load(project_dir=str(tmp_path))
+    assert cfg.command == "claude"
+
+
+def test_env_command_overrides_toml(tmp_path):
+    write_toml(tmp_path / "pic.toml", '[pic]\ncommand = "claude"\n')
+    env = {"HOME": "/home/tester", "PIC_COMMAND": "fish"}
+    cfg = load(project_dir=str(tmp_path), env=env)
+    assert cfg.command == "fish"
+
+
+def test_cli_command_wins_over_env():
+    env = {"HOME": "/home/tester", "PIC_COMMAND": "fish"}
+    parsed = cli.Parsed(command="aider")
+    cfg = load(env=env, parsed=parsed)
+    assert cfg.command == "aider"
 
 
 # --- environment and flags ------------------------------------------

@@ -1,10 +1,10 @@
 """pic — run the pi coding agent inside a container.
 
 pic owns the arguments before a bare `--`; everything after it goes
-verbatim to the inner command, which defaults to `pi` (change it with
-`-c`, e.g. `pic -c bash` for a shell).  There is deliberately no table
-of pi's options: the boundary is the `--` itself, so pi releases can
-change their CLI freely.
+verbatim to the inner command, which defaults to `pi` (set with `-c` or
+`[pic] command` in pic.toml, e.g. `pic -c bash` for a shell).  There is
+deliberately no table of pi's options: the boundary is the `--` itself,
+so pi releases can change their CLI freely.
 
 Usage:
   pic [PIC-OPTIONS] [PROJECT-DIR] [-- INNER-ARGS...]
@@ -17,15 +17,15 @@ PIC-OPTIONS:
   -h, --help            show this help
   -V, --version         show the version
   -b, --backend NAME    guix | oci | auto   (default: auto)
-  -c, --command CMD     inner command (default: pi), e.g. bash, fish
+  -c, --command CMD     inner command (default: pi / [pic] command)
   -s, --share PATH      extra path to share into the container (repeatable)
   -e, --preserve REGEX  extra env var regexp to pass through (repeatable)
       --runtime VALUE   profile path (guix) or image ref (oci)
       --no-project      ignore pic.toml and project env detection
       --list-backends   list the backends and exit
 
-Environment: PIC_BACKEND, PIC_SHARE (colon-separated), PIC_PRESERVE
-(whitespace-separated), PIC_RUNTIME, PIC_NO_PROJECT.
+Environment: PIC_BACKEND, PIC_COMMAND, PIC_SHARE (colon-separated),
+PIC_PRESERVE (whitespace-separated), PIC_RUNTIME, PIC_NO_PROJECT.
 
 Configuration (schema in README.md):
   ~/.config/pic/pic.toml     user defaults

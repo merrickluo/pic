@@ -10,7 +10,8 @@ pic [PIC-OPTIONS] [PROJECT-DIR] [-- INNER-ARGS...]
 ```
 
 pic's own options go before a bare `--`; everything after it goes
-verbatim to the inner command (default: `pi`).
+verbatim to the inner command (default: `pi`, or the configured
+`[pic] command`).
 
 ```
 pic --help            pic's own help
@@ -23,7 +24,7 @@ pic -c bash           a shell inside the container
 | `-h`, `--help` | pic's own help |
 | `-V`, `--version` | version |
 | `-b`, `--backend NAME` | `guix` \| `oci` \| `auto` (default `auto`) |
-| `-c`, `--command CMD` | inner command (default `pi`), e.g. `bash`, `fish` |
+| `-c`, `--command CMD` | inner command (default: `[pic] command` or `pi`), e.g. `bash`, `claude` |
 | `-s`, `--share PATH` | extra path shared into the container (repeatable) |
 | `-e`, `--preserve REGEX` | extra env var regexp passed through (repeatable) |
 | `--runtime VALUE` | profile path (guix) or image ref (oci) — overrides config |
@@ -39,7 +40,7 @@ builtin defaults < ~/.config/pic/pic.toml < <project>/pic.toml
                  < environment < command line
 ```
 
-Environment: `PIC_BACKEND`, `PIC_SHARE` (colon-separated),
+Environment: `PIC_BACKEND`, `PIC_COMMAND`, `PIC_SHARE` (colon-separated),
 `PIC_PRESERVE` (whitespace-separated), `PIC_RUNTIME`, `PIC_NO_PROJECT`.
 
 `pic.toml` schema (project overrides user):
@@ -47,6 +48,7 @@ Environment: `PIC_BACKEND`, `PIC_SHARE` (colon-separated),
 ```toml
 [pic]
 backend = "auto"            # guix | oci | auto
+command = "pi"              # default inner command, e.g. "claude"
 
 [shares]
 add = ["/path/to/share"]    # extra paths shared into the container
