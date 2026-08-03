@@ -17,4 +17,6 @@
         "git"
         "openssh"
         "nss-certs"
-        "gnupg"))
+        "gnupg"
+        "fd"
+        "ripgrep"))

@@ -1,9 +1,10 @@
 # Agent image for pic's oci backend.
 #
 # This is the image pic LAUNCHES: it hosts the pi coding agent (npm)
-# plus the tools from the example guix manifest (guix/manifest.scm):
-# python, git, openssh, gnupg, ca-certificates.  pic itself (the
-# launcher) stays on the host and is NOT part of this image.
+# plus the tools it needs (mirrors guix/manifest.scm): python, git,
+# openssh, gnupg, ca-certificates, and the tools pi would otherwise
+# auto-download on first use (fd, ripgrep).  pic itself (the launcher)
+# stays on the host and is NOT part of this image.
 #
 # pic starts it with `run IMAGE pi INNER...`, so the command is always
 # passed explicitly.
@@ -21,6 +22,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         openssh-client \
         gnupg \
         ca-certificates \
+        fd-find \
+        ripgrep \
+    && ln -s /usr/bin/fdfind /usr/bin/fd \
     && rm -rf /var/lib/apt/lists/*
 
 # plain `docker run IMAGE` starts pi; pic always overrides with its own
