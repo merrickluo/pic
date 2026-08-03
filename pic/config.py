@@ -58,6 +58,11 @@ class Config:
     oci_image: str = "ghcr.io/merrickluo/pi-agent:latest"
     oci_network: str = "host"
 
+    apple_image: str = "ghcr.io/merrickluo/pi-agent:latest"
+    apple_network: str = "default"
+    apple_init: bool = True
+    apple_ssh: bool = True
+
     @property
     def shares(self):
         return DEFAULT_SHARES + self.extra_shares
@@ -108,6 +113,15 @@ def _apply_toml(cfg, data, source):
         cfg.oci_image = str(oci["image"])
     if "network" in oci:
         cfg.oci_network = str(oci["network"])
+    apple = data.get("backend", {}).get("apple", {})
+    if "image" in apple:
+        cfg.apple_image = str(apple["image"])
+    if "network" in apple:
+        cfg.apple_network = str(apple["network"])
+    if "init" in apple:
+        cfg.apple_init = bool(apple["init"])
+    if "ssh" in apple:
+        cfg.apple_ssh = bool(apple["ssh"])
 
 
 def _apply_env(cfg, env):

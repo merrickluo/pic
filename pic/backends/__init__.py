@@ -1,6 +1,7 @@
 """Backend registry.  Add new backends here (see README.md)."""
 
 from ..util import die
+from .apple import AppleBackend
 from .base import Backend
 from .guix import GuixBackend
 from .oci import OciBackend
@@ -8,6 +9,7 @@ from .oci import OciBackend
 BACKENDS = {
     "guix": GuixBackend(),
     "oci": OciBackend(),
+    "apple": AppleBackend(),
 }
 
 
@@ -24,7 +26,7 @@ def select_backend(config, env=None):
             die(f"pic: unknown backend: {name} "
                 f"(known: {', '.join(BACKENDS)})")
         return backend
-    for candidate in ("guix", "oci"):
+    for candidate in ("guix", "oci", "apple"):
         backend = BACKENDS[candidate]
         if backend.available():
             return backend

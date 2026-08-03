@@ -3,6 +3,7 @@
 import pytest
 
 from pic.backends import BACKENDS, select_backend
+from pic.backends.apple import AppleBackend, inherit_env
 from pic.backends.guix import GuixBackend
 from pic.backends.oci import OciBackend, expand_env
 from pic.config import Config
@@ -151,10 +152,57 @@ def test_expand_env_matches_regexps():
                      ("MYVAR_1", "c")]
 
 
+# --- apple backend -------------------------------------------------
+
+def test_apple_golden_argv():
+    cfg = Config(apple_image="img:1")
+    env = dict(ENV, ANTHROPIC_API_KEY="sk-123")
+    argv = AppleBackend().build_argv(
+        spec(workspace="/w", shares=("/s1",), preserves=("^ANTHROPIC_",),
+             command=("pi",)), cfg, env)
+    assert argv[:4] == ["container", "run", "--rm", "-it"]
+    assert "--network" in argv and "default" in argv
+    assert "--init" in argv and "--ssh" in argv
+    assert "-v/s1:/s1" in argv
+    assert "-e" in argv and "ANTHROPIC_API_KEY" in argv
+    assert "sk-123" not in argv  # bare key; the tool inherits the value
+    assert argv[-4:] == ["-w", "/w", "img:1", "pi"]
+
+
+def test_apple_runtime_overrides_image():
+    cfg = Config(apple_image="default:1")
+    argv = AppleBackend().build_argv(spec(runtime="custom:2", command=("pi",)),
+                                     cfg, ENV)
+    assert "custom:2" in argv and "default:1" not in argv
+
+
+def test_apple_init_ssh_toggle():
+    cfg = Config(apple_init=False, apple_ssh=False)
+    argv = AppleBackend().build_argv(spec(command=("pi",)), cfg, ENV)
+    assert "--init" not in argv and "--ssh" not in argv
+
+
+def test_apple_inherit_env_bare_keys():
+    env = {"ANTHROPIC_API_KEY": "a", "OPENAI_KEY": "b", "MYVAR_1": "c",
+           "HOME": "/h"}
+    keys = inherit_env([r"^(ANTHROPIC|OPENAI)_", "^MYVAR_"], env)
+    assert keys == ["ANTHROPIC_API_KEY", "OPENAI_KEY", "MYVAR_1"]
+
+
+def test_apple_no_container_validate_raises(monkeypatch):
+    monkeypatch.setattr("pic.backends.apple.shutil.which", lambda n: None)
+    with pytest.raises(PicError, match="container"):
+        AppleBackend().validate(spec(), Config(), ENV)
+
+
+def test_apple_project_env_none(tmp_path):
+    assert AppleBackend().project_env(tmp_path, Config()) is None
+
+
 # --- registry -------------------------------------------------------
 
 def test_backend_registry():
-    assert set(BACKENDS) == {"guix", "oci"}
+    assert set(BACKENDS) == {"guix", "oci", "apple"}
 
 
 def test_select_backend_explicit(monkeypatch):
@@ -171,6 +219,13 @@ def test_select_backend_auto_falls_back_to_oci(monkeypatch):
     monkeypatch.setattr(BACKENDS["guix"], "available", lambda: False)
     monkeypatch.setattr(BACKENDS["oci"], "available", lambda: True)
     assert select_backend(Config()) is BACKENDS["oci"]
+
+
+def test_select_backend_auto_falls_back_to_apple(monkeypatch):
+    monkeypatch.setattr(BACKENDS["guix"], "available", lambda: False)
+    monkeypatch.setattr(BACKENDS["oci"], "available", lambda: False)
+    monkeypatch.setattr(BACKENDS["apple"], "available", lambda: True)
+    assert select_backend(Config()) is BACKENDS["apple"]
 
 
 def test_select_backend_unknown_dies(capsys):

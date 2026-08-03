@@ -64,8 +64,14 @@ network = true
 
 [backend.oci]
 driver = "auto"             # podman | docker | auto
-image = "registry.example/pi-agent:latest"
+image = "ghcr.io/merrickluo/pi-agent:latest"
 network = "host"
+
+[backend.apple]
+image = "ghcr.io/merrickluo/pi-agent:latest"
+network = "default"         # container network names, not "host"
+init = true                 # init process forwards signals
+ssh = true                  # forward the SSH agent socket
 ```
 
 ## Backends
@@ -77,7 +83,9 @@ network = "host"
   with the exact build command instead.
 - **oci** — podman or docker with a prebuilt agent image. Env preserve
   regexps are expanded against the host environment.
-- **apple** — Apple's `container` on macOS: TBD.
+- **apple** — Apple's `container` (macOS 26, Apple silicon), OCI-compatible.
+  Same image as oci; `-e KEY` inherits values from the host, `--init`
+  forwards signals, `--ssh` forwards the SSH agent socket.
 
 New backends implement the `Backend` ABC in `pic/backends/base.py` and
 register in `pic/backends/__init__.py`; the frontend never names a
