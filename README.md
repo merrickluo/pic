@@ -37,7 +37,7 @@ pic -c bash           a shell inside the container
 Precedence, low to high:
 
 ```
-builtin defaults < ~/.config/pic/pic.toml < <project>/pic.toml
+builtin defaults < ~/.config/pic/config.toml < <project>/pic.toml
                  < environment < command line
 ```
 

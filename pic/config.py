@@ -3,7 +3,7 @@
 Precedence (low to high):
 
     builtin defaults
-      < ~/.config/pic/pic.toml
+      < ~/.config/pic/config.toml
       < <project>/pic.toml
       < environment (PIC_BACKEND, PIC_SHARE, PIC_PRESERVE, PIC_RUNTIME, ...)
       < command line flags
@@ -17,7 +17,7 @@ from pathlib import Path
 from . import resources
 from .util import die
 
-USER_CONFIG = Path("~/.config/pic/pic.toml").expanduser()
+USER_CONFIG = Path("~/.config/pic/config.toml").expanduser()
 PROJECT_CONFIG = "pic.toml"
 
 #: Default paths shared into the container (existing ones only; `~`, $HOME

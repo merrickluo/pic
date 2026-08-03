@@ -29,7 +29,7 @@ Environment: PIC_BACKEND, PIC_COMMAND, PIC_SHARE (colon-separated),
 PIC_PRESERVE (whitespace-separated), PIC_RUNTIME, PIC_NO_PROJECT.
 
 Configuration (schema in README.md):
-  ~/.config/pic/pic.toml     user defaults
+  ~/.config/pic/config.toml        user defaults
   <project>/pic.toml         project overrides
 
 Precedence (low to high):
