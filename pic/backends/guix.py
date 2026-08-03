@@ -11,7 +11,7 @@ import os
 import shutil
 
 from ..spec import ProjectEnv
-from ..util import PicError
+from ..util import PicError, expand_path
 from .base import Backend
 
 
@@ -45,7 +45,7 @@ class GuixBackend(Backend):
         argv += [f"--share={p}" for p in spec.shares if p != spec.workspace]
         argv += [f"--preserve={r}" for r in spec.preserves]
         for channel in config.guix_channels:
-            argv += ["-L", channel]
+            argv += ["-L", expand_path(channel, env)]
         argv += ["-m", str(config.guix_manifest)]
         if spec.project is not None:
             argv += spec.project.container_args

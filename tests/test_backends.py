@@ -46,6 +46,12 @@ def test_guix_workspace_not_shared_twice():
     assert argv.count("--share=/w") == 0
 
 
+def test_guix_channels_expand_tilde():
+    cfg = Config(guix_manifest="/m.scm", guix_channels=["~/ch"])
+    argv = GuixBackend().build_argv(spec(), cfg, ENV)
+    assert "/home/tester/ch" in argv
+
+
 def test_guix_project_env_golden_argv():
     cfg = Config(guix_channels=["/ch1", "/ch2"], guix_manifest="/m.scm")
     project = ProjectEnv(container_args=["-D", "-f", "/w/guix.scm"])

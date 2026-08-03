@@ -73,6 +73,23 @@ def test_project_toml_wins_over_user(tmp_path, monkeypatch):
     assert cfg.backend == "oci"
 
 
+def test_toml_string_values_are_single_entries(tmp_path):
+    write_toml(tmp_path / "pic.toml", """
+[shares]
+add = "~/mytool"
+
+[env]
+preserve = "^MYCORP_"
+
+[backend.guix]
+channels = "~/projs/meex"
+""")
+    cfg = load(project_dir=str(tmp_path))
+    assert cfg.extra_shares == ["~/mytool"]
+    assert cfg.extra_preserves == ["^MYCORP_"]
+    assert cfg.guix_channels == ["~/projs/meex"]
+
+
 def test_bad_toml_dies(tmp_path, capsys):
     write_toml(tmp_path / "pic.toml", "[unclosed\n")
     with pytest.raises(SystemExit) as exc:

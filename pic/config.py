@@ -71,6 +71,11 @@ class Config:
         return DEFAULT_PRESERVES + self.extra_preserves
 
 
+def _as_list(value):
+    """Return VALUE as a list; a bare string becomes a single entry."""
+    return value if isinstance(value, list) else [value]
+
+
 def _read_toml(path):
     """Return the parsed TOML, or {} when the file does not exist."""
     if not path.is_file():
@@ -92,15 +97,15 @@ def _apply_toml(cfg, data, source):
         cfg.no_project = bool(pic["no_project"])
     shares = data.get("shares", {})
     if "add" in shares:
-        cfg.extra_shares += [str(p) for p in shares["add"]]
+        cfg.extra_shares += [str(p) for p in _as_list(shares["add"])]
     env = data.get("env", {})
     if "preserve" in env:
-        cfg.extra_preserves += [str(r) for r in env["preserve"]]
+        cfg.extra_preserves += [str(r) for r in _as_list(env["preserve"])]
     guix = data.get("backend", {}).get("guix", {})
     if "manifest" in guix:
         cfg.guix_manifest = str(guix["manifest"])
     if "channels" in guix:
-        cfg.guix_channels = [str(c) for c in guix["channels"]]
+        cfg.guix_channels = [str(c) for c in _as_list(guix["channels"])]
     if "network" in guix:
         cfg.guix_network = bool(guix["network"])
     oci = data.get("backend", {}).get("oci", {})
