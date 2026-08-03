@@ -107,24 +107,63 @@ def test_guix_project_env_none(tmp_path):
 
 # --- oci backend ----------------------------------------------------
 
-def test_oci_golden_argv():
+def test_oci_golden_argv(monkeypatch):
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.geteuid", lambda: 1000)
     cfg = Config(oci_driver="podman")
     env = dict(ENV, ANTHROPIC_API_KEY="sk-123")
     argv = OciBackend().build_argv(
         spec(workspace="/w", preserves=("^ANTHROPIC_",)), cfg, env)
-    assert argv[:6] == ["podman", "run", "--rm", "-it", "--network", "host"]
+    assert argv[:9] == ["podman", "run", "--rm", "-it",
+                        "--userns=keep-id:uid=1000,gid=1000",
+                        "--user", "1000:1000", "--network", "host"]
     assert "-v/s1:/s1" in argv and "-v/s2:/s2" in argv
     assert "-e" in argv and "ANTHROPIC_API_KEY=sk-123" in argv
     assert argv[-5:] == ["-w", "/w", "ghcr.io/merrickluo/pi-agent:latest",
                          "pi", "--continue"]
 
 
-def test_oci_sets_home_env():
+def test_oci_sets_home_env(monkeypatch):
     """The container runs as the image user (root); point $HOME at the
     mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ..."""
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.geteuid", lambda: 1000)
     cfg = Config(oci_driver="podman")
     argv = OciBackend().build_argv(spec(), cfg, ENV)
     assert "-e" in argv and "HOME=/home/tester" in argv
+
+
+def test_oci_docker_runs_as_host_uid(monkeypatch):
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.geteuid", lambda: 1000)
+    argv = OciBackend().build_argv(spec(), Config(oci_driver="docker"), ENV)
+    assert argv[:6] == ["docker", "run", "--rm", "-it",
+                        "--user", "1000:1000"]
+    assert not any(a.startswith("--userns") for a in argv)
+
+
+def test_oci_rootful_podman_no_keep_id(monkeypatch):
+    """e.g. pic run via sudo: euid 0 but the real user owns the files."""
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.geteuid", lambda: 0)
+    argv = OciBackend().build_argv(spec(), Config(oci_driver="podman"), ENV)
+    assert "--user" in argv and "1000:1000" in argv
+    assert not any(a.startswith("--userns") for a in argv)
+
+
+def test_oci_rootless_podman_uses_keep_id(monkeypatch):
+    """Rootless podman maps container uids into a subuid range by
+    default; keep-id maps ours 1:1 so files keep host ownership."""
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 1000)
+    monkeypatch.setattr("pic.backends.oci.os.geteuid", lambda: 1000)
+    argv = OciBackend().build_argv(spec(), Config(oci_driver="podman"), ENV)
+    assert "--userns=keep-id:uid=1000,gid=1000" in argv
+    assert "--user" in argv and "1000:1000" in argv
 
 
 def test_oci_runtime_overrides_image():
@@ -169,13 +208,16 @@ def test_expand_env_matches_regexps():
 
 # --- apple backend -------------------------------------------------
 
-def test_apple_golden_argv():
+def test_apple_golden_argv(monkeypatch):
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 501)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 20)
     cfg = Config(apple_image="img:1")
     env = dict(ENV, ANTHROPIC_API_KEY="sk-123")
     argv = AppleBackend().build_argv(
         spec(workspace="/w", shares=("/s1",), preserves=("^ANTHROPIC_",),
              command=("pi",)), cfg, env)
-    assert argv[:4] == ["container", "run", "--rm", "-it"]
+    assert argv[:6] == ["container", "run", "--rm", "-it",
+                        "--user", "501:20"]
     assert "--network" in argv and "default" in argv
     assert "--init" in argv and "--ssh" in argv
     assert "-v/s1:/s1" in argv
@@ -184,12 +226,15 @@ def test_apple_golden_argv():
     assert argv[-4:] == ["-w", "/w", "img:1", "pi"]
 
 
-def test_apple_sets_home_env():
+def test_apple_sets_home_env(monkeypatch):
     """Same $HOME fix as oci: the Linux image runs as root, the mounted
     shares are host-home paths."""
+    monkeypatch.setattr("pic.backends.oci.os.getuid", lambda: 501)
+    monkeypatch.setattr("pic.backends.oci.os.getgid", lambda: 20)
     cfg = Config()
     argv = AppleBackend().build_argv(spec(command=("pi",)), cfg, ENV)
     assert "-e" in argv and "HOME=/home/tester" in argv
+    assert "--user" in argv and "501:20" in argv
 
 
 def test_apple_runtime_overrides_image():

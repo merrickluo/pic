@@ -82,13 +82,15 @@ ssh = true                  # forward the SSH agent socket
   `guix.scm` in development mode (`-D -f`), `manifest.scm` as a
   manifest.
 - **oci** — podman or docker with a prebuilt agent image. Env preserve
-  regexps are expanded against the host environment. `$HOME` is set to
-  the host home, so pi finds `~/.pi`, `~/.ssh`, `~/.gitconfig`, ...
-  even though the image runs as root.
+  regexps are expanded against the host environment. The container runs
+  as the host uid:gid (`--user`, plus `--userns=keep-id` for rootless
+  podman) so files created inside keep host ownership, and `$HOME` is
+  set to the host home so pi finds `~/.pi`, `~/.ssh`, `~/.gitconfig`,
+  ... even though the image user is root.
 - **apple** — Apple's `container` (macOS 26, Apple silicon), OCI-compatible.
   Same image as oci; `-e KEY` inherits values from the host, `--init`
-  forwards signals, `--ssh` forwards the SSH agent socket. `$HOME` is
-  set to the host home, like oci.
+  forwards signals, `--ssh` forwards the SSH agent socket. Runs as the
+  host uid:gid and with the host `$HOME`, like oci.
 
 New backends implement the `Backend` ABC in `pic/backends/base.py` and
 register in `pic/backends/__init__.py`; the frontend never names a

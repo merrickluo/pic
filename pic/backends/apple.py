@@ -4,7 +4,8 @@ OCI-compatible; runs Linux containers as per-container VMs.  Same
 image and docker-shaped flags as the oci backend, with three
 differences: `-e KEY` inherits its value from the host (no expansion),
 `--init` runs an init process that forwards signals, and `--ssh`
-forwards the SSH agent socket.
+forwards the SSH agent socket.  Like oci, the container runs as the
+host uid:gid (--user) so files keep host ownership.
 """
 
 import os
@@ -14,6 +15,7 @@ import shutil
 from ..spec import ProjectEnv
 from ..util import PicError, expand_path
 from .base import Backend
+from .oci import identity_args
 
 
 class AppleBackend(Backend):
@@ -34,6 +36,7 @@ class AppleBackend(Backend):
 
     def build_argv(self, spec, config, env):
         argv = ["container", "run", "--rm", "-it"]
+        argv += identity_args("docker")   # container is docker-shaped
         argv += ["--network", config.apple_network]
         if config.apple_init:
             argv.append("--init")
