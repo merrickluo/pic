@@ -76,11 +76,12 @@ ssh = true                  # forward the SSH agent socket
 
 ## Backends
 
-- **guix** — `guix shell -C`. Profile mode runs a prebuilt agent profile;
-  project-env mode combines the agent manifest with the project's
-  `guix.scm` (loaded in development mode) or `manifest.scm` (as a
-  manifest). The agent profile is never built on demand — pic errors
-  with the exact build command instead.
+- **guix** — `guix shell -C`. When an agent profile exists it is the
+  whole environment (guix shell cannot merge `--profile` with package
+  options). Without one, project-env mode combines the agent manifest
+  with the project's `guix.scm` (development mode) or `manifest.scm`
+  (as a manifest). The agent profile is never built on demand — pic
+  errors with the exact build command instead.
 - **oci** — podman or docker with a prebuilt agent image. Env preserve
   regexps are expanded against the host environment.
 - **apple** — Apple's `container` (macOS 26, Apple silicon), OCI-compatible.

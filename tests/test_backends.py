@@ -88,6 +88,29 @@ def test_guix_project_env_guix_scm_dev_mode(tmp_path):
     assert env.container_args == ["-D", "-f", str(tmp_path / "guix.scm")]
 
 
+def test_guix_project_env_uses_profile_when_present(tmp_path):
+    (tmp_path / "guix.scm").write_text("(define-public x 1)\n")
+    profile = tmp_path / "prof"
+    profile.mkdir()
+    project = GuixBackend().project_env(tmp_path, Config())
+    cfg = Config(guix_profile=str(profile), guix_manifest="/agent-m.scm",
+                 guix_channels=["/ch"])
+    argv = GuixBackend().build_argv(spec(project=project), cfg, ENV)
+    assert argv[-5:] == ["-p", str(profile), "--", "pi", "--continue"]
+    assert "-m" not in argv and "-L" not in argv and "-D" not in argv
+
+
+def test_guix_project_env_uses_runtime_when_present(tmp_path):
+    (tmp_path / "guix.scm").write_text("(define-public x 1)\n")
+    profile = tmp_path / "prof"
+    profile.mkdir()
+    project = GuixBackend().project_env(tmp_path, Config())
+    cfg = Config(guix_manifest="/agent-m.scm")
+    argv = GuixBackend().build_argv(spec(project=project, runtime=str(profile)),
+                                    cfg, ENV)
+    assert argv[-5:] == ["-p", str(profile), "--", "pi", "--continue"]
+
+
 def test_guix_project_env_manifest_scm(tmp_path):
     (tmp_path / "manifest.scm").write_text("(specifications->manifest '())\n")
     env = GuixBackend().project_env(tmp_path, Config())
