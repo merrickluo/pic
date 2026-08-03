@@ -107,7 +107,7 @@ def test_oci_golden_argv():
     assert argv[:6] == ["podman", "run", "--rm", "-it", "--network", "host"]
     assert "-v/s1:/s1" in argv and "-v/s2:/s2" in argv
     assert "-e" in argv and "ANTHROPIC_API_KEY=sk-123" in argv
-    assert argv[-5:] == ["-w", "/w", "ghcr.io/meex/pi-agent:latest",
+    assert argv[-5:] == ["-w", "/w", "ghcr.io/merrickluo/pi-agent:latest",
                          "pi", "--continue"]
 
 

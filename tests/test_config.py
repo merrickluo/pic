@@ -23,7 +23,7 @@ def test_builtin_defaults():
     assert cfg.backend == "auto"
     assert cfg.command == "pi"
     assert cfg.guix_profile == "~/.guix-home/extra-profiles/agent"
-    assert cfg.oci_image == "ghcr.io/meex/pi-agent:latest"
+    assert cfg.oci_image == "ghcr.io/merrickluo/pi-agent:latest"
     assert any("~/.agents" in s for s in cfg.shares)
     assert any("ANTHROPIC" in r for r in cfg.preserves)
     assert cfg.guix_manifest  # shipped default resolved

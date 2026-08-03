@@ -55,7 +55,7 @@ class Config:
     guix_network: bool = True
 
     oci_driver: str = "auto"                   # podman | docker | auto
-    oci_image: str = "ghcr.io/meex/pi-agent:latest"
+    oci_image: str = "ghcr.io/merrickluo/pi-agent:latest"
     oci_network: str = "host"
 
     @property
