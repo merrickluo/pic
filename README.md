@@ -1,13 +1,12 @@
 # pic — the pi coding agent inside a container
 
 `pic` runs the pi coding agent inside a container.
-`pic-shell` is the same, with `bash` as the inner command.
+`pic -c bash` gives you a shell instead.
 
 ## Usage
 
 ```
 pic [PIC-OPTIONS] [PROJECT-DIR] [-- INNER-ARGS...]
-pic-shell [PIC-OPTIONS] [PROJECT-DIR] [-- INNER-ARGS...]
 ```
 
 pic's own options go before a bare `--`; everything after it goes
@@ -16,6 +15,7 @@ verbatim to the inner command (default: `pi`).
 ```
 pic --help            pic's own help
 pic -- --model sonnet -- "fix the build"   pi's options after `--`
+pic -c bash           a shell inside the container
 ```
 
 | Option | Meaning |
@@ -23,6 +23,7 @@ pic -- --model sonnet -- "fix the build"   pi's options after `--`
 | `-h`, `--help` | pic's own help |
 | `-V`, `--version` | version |
 | `-b`, `--backend NAME` | `guix` \| `oci` \| `auto` (default `auto`) |
+| `-c`, `--command CMD` | inner command (default `pi`), e.g. `bash`, `fish` |
 | `-s`, `--share PATH` | extra path shared into the container (repeatable) |
 | `-e`, `--preserve REGEX` | extra env var regexp passed through (repeatable) |
 | `--runtime VALUE` | profile path (guix) or image ref (oci) — overrides config |
@@ -85,7 +86,7 @@ backend directly.
 ```
 pic/
 ├── README.md                  this file
-├── pyproject.toml             entry points: pic, pic-shell; wheel data
+├── pyproject.toml             entry point: pic; wheel data
 ├── guix.scm                   package definition for pic itself
 ├── pic/
 │   ├── cli.py                 arg parsing (the `--` boundary), help

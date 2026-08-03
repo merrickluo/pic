@@ -8,11 +8,9 @@ from pathlib import Path
 from .util import die, expand_path
 
 
-def inner_command(prog, inner):
-    """Resolve the inner command: `pi` + args for pic, bash/cmd for pic-shell."""
-    if prog == "pic-shell":
-        return list(inner) if inner else ["bash"]
-    return ["pi"] + list(inner)
+def inner_command(command, inner):
+    """Resolve the inner command: COMMAND plus any inner args."""
+    return [command] + list(inner)
 
 
 @dataclass

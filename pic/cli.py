@@ -1,22 +1,23 @@
 """pic — run the pi coding agent inside a container.
 
-"pi in container".  pic owns the arguments before a bare `--`; everything
-after it goes verbatim to the inner command, which defaults to `pi`
-(pic-shell: `bash`).  There is deliberately no table of pi's options: the
-boundary is the `--` itself, so pi releases can change their CLI freely.
+pic owns the arguments before a bare `--`; everything after it goes
+verbatim to the inner command, which defaults to `pi` (change it with
+`-c`, e.g. `pic -c bash` for a shell).  There is deliberately no table
+of pi's options: the boundary is the `--` itself, so pi releases can
+change their CLI freely.
 
 Usage:
   pic [PIC-OPTIONS] [PROJECT-DIR] [-- INNER-ARGS...]
-  pic-shell [PIC-OPTIONS] [PROJECT-DIR] [-- INNER-ARGS...]
 
-  pic -- --help           pi's own help
-  pic --help              pic's own help (this text)
-  pic -- --model sonnet -- "fix the build"
+  pic --help                        pic's own help (this text)
+  pic -- --model sonnet -- "fix the build"   pi's options after `--`
+  pic -c bash                       a shell inside the container
 
 PIC-OPTIONS:
   -h, --help            show this help
   -V, --version         show the version
   -b, --backend NAME    guix | oci | auto   (default: auto)
+  -c, --command CMD     inner command (default: pi), e.g. bash, fish
   -s, --share PATH      extra path to share into the container (repeatable)
   -e, --preserve REGEX  extra env var regexp to pass through (repeatable)
       --runtime VALUE   profile path (guix) or image ref (oci)
@@ -49,6 +50,7 @@ class UsageError(Exception):
 @dataclass
 class Parsed:
     backend: str | None = None
+    command: str | None = None
     shares: list[str] = field(default_factory=list)
     preserves: list[str] = field(default_factory=list)
     runtime: str | None = None
@@ -93,6 +95,11 @@ def parse(argv, prog):
             parsed.list_backends = True
         elif arg == "--no-project":
             parsed.no_project = True
+        elif arg in ("--command", "-c"):
+            parsed.command = need_value(before, i, arg)
+            i += 1
+        elif arg.startswith("--command="):
+            parsed.command = arg.split("=", 1)[1]
         elif arg in ("--backend", "-b"):
             parsed.backend = need_value(before, i, arg)
             i += 1
@@ -148,17 +155,12 @@ def _run(argv, prog):
             state = "available" if backend.available() else "not available"
             print(f"{name:<8} {state:<14} platforms={','.join(backend.platforms)}")
         return 0
-    return run_pic(prog, parsed)
+    return run_pic(parsed)
 
 
 def main(argv=None):
     """Entry point for the `pic` command."""
     return _run(argv, "pic")
-
-
-def shell_main(argv=None):
-    """Entry point for the `pic-shell` command."""
-    return _run(argv, "pic-shell")
 
 
 if __name__ == "__main__":

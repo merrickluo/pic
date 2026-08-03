@@ -9,14 +9,15 @@ from .spec import assemble, inner_command
 from .util import PicError, die
 
 
-def run_pic(prog, parsed, env=None):
+def run_pic(parsed, env=None):
     """Resolve the backend and launch the container.  Never returns on
     success (os.execv replaces the process)."""
     env = env if env is not None else os.environ
     config = load_config(parsed.project_dir, env=env, parsed=parsed)
     backend = select_backend(config, env)
     spec = assemble(config, parsed.project_dir,
-                    inner_command(prog, parsed.inner), env=env)
+                    inner_command(parsed.command or "pi", parsed.inner),
+                    env=env)
     if not config.no_project:
         spec.project = backend.project_env(spec.workspace, config)
     try:

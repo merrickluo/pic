@@ -37,6 +37,7 @@ def test_defaults():
     assert p.project_dir is None
     assert p.inner == []
     assert p.backend is None
+    assert p.command is None
     assert p.shares == []
     assert p.preserves == []
 
@@ -65,19 +66,27 @@ def test_second_bare_word_raises():
 
 
 def test_value_options():
-    p = parse(["--backend", "oci", "--share", "/x", "--share=/y",
-               "--preserve", "^A_", "--preserve=^B_", "--runtime", "img"])
+    p = parse(["--backend", "oci", "--command", "fish", "--share", "/x",
+               "--share=/y", "--preserve", "^A_", "--preserve=^B_",
+               "--runtime", "img"])
     assert p.backend == "oci"
+    assert p.command == "fish"
     assert p.shares == ["/x", "/y"]
     assert p.preserves == ["^A_", "^B_"]
     assert p.runtime == "img"
 
 
 def test_short_value_options():
-    p = parse(["-b", "guix", "-s", "/x", "-e", "^A_"])
+    p = parse(["-b", "guix", "-c", "bash", "-s", "/x", "-e", "^A_"])
     assert p.backend == "guix"
+    assert p.command == "bash"
     assert p.shares == ["/x"]
     assert p.preserves == ["^A_"]
+
+
+def test_command_equals_form():
+    p = parse(["--command=zsh"])
+    assert p.command == "zsh"
 
 
 def test_missing_value_raises():
@@ -96,9 +105,10 @@ def test_help_exits_zero_and_prints_pic_help(capsys):
         parse(["--help"])
     assert exc.value.code == 0
     out = capsys.readouterr().out
+    assert "--command" in out
+    assert "`--`" in out
     assert "PIC_SHARE" in out
     assert "PIC_PRESERVE" in out
-    assert "no table of pi's options" in out
 
 
 def test_version_exits_zero(capsys):
@@ -110,18 +120,15 @@ def test_version_exits_zero(capsys):
 
 # --- inner command resolution ---------------------------------------
 
-def test_inner_command_pic_defaults_to_pi():
-    assert inner_command("pic", []) == ["pi"]
+def test_inner_command_defaults_to_pi():
+    assert inner_command("pi", []) == ["pi"]
 
 
-def test_inner_command_pic_prefixes_pi():
-    assert inner_command("pic", ["--continue", "hi"]) == [
+def test_inner_command_prefixes_args():
+    assert inner_command("pi", ["--continue", "hi"]) == [
         "pi", "--continue", "hi"]
 
 
-def test_inner_command_shell_defaults_to_bash():
-    assert inner_command("pic-shell", []) == ["bash"]
-
-
-def test_inner_command_shell_uses_cmd_verbatim():
-    assert inner_command("pic-shell", ["ls", "-la"]) == ["ls", "-la"]
+def test_inner_command_custom():
+    assert inner_command("bash", ["-l"]) == ["bash", "-l"]
+    assert inner_command("fish", []) == ["fish"]
