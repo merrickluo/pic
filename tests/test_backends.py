@@ -80,8 +80,11 @@ def test_guix_validate_present_manifest_passes(tmp_path):
     GuixBackend().validate(spec(), cfg, ENV)  # must not raise
 
 
-def test_guix_validate_missing_channel_raises():
-    cfg = Config(guix_manifest="/m.scm", guix_channels=["~/no/such/channel"])
+def test_guix_validate_missing_channel_raises(tmp_path):
+    manifest = tmp_path / "m.scm"
+    manifest.write_text("(specifications->manifest '())\n")
+    cfg = Config(guix_manifest=str(manifest),
+                 guix_channels=["~/no/such/channel"])
     with pytest.raises(PicError, match="channel not found"):
         GuixBackend().validate(spec(), cfg, ENV)
 
