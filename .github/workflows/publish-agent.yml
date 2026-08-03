@@ -3,7 +3,7 @@ name: publish agent image
 on:
   push:
     branches: [main]
-    paths: [Dockerfile, guix/manifest.scm]
+    paths: [Dockerfile, guix/manifest.scm, .github/workflows/publish-agent.yml]
   workflow_dispatch:
 
 jobs:
