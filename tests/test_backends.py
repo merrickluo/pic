@@ -220,7 +220,9 @@ def test_apple_golden_argv(monkeypatch):
                         "--user", "501:20"]
     assert "--network" in argv and "default" in argv
     assert "--init" in argv and "--ssh" in argv
-    assert "-v/s1:/s1" in argv
+    # apple `container` has no `-v` shorthand; only `--volume`
+    assert "--volume=/s1:/s1" in argv
+    assert not any(a.startswith("-v") for a in argv)
     assert "-e" in argv and "ANTHROPIC_API_KEY" in argv
     assert "sk-123" not in argv  # bare key; the tool inherits the value
     assert argv[-4:] == ["-w", "/w", "img:1", "pi"]

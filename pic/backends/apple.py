@@ -42,7 +42,8 @@ class AppleBackend(Backend):
             argv.append("--init")
         if config.apple_ssh:
             argv.append("--ssh")
-        argv += [f"-v{p}:{p}" for p in spec.shares]
+        # apple `container` has no `-v` shorthand; only `--volume`
+        argv += [f"--volume={p}:{p}" for p in spec.shares]
         # the Linux image user (root) has a different home; point $HOME at
         # the mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ...
         argv += ["-e", f"HOME={expand_path('~', env)}"]
