@@ -49,7 +49,7 @@ class Config:
     runtime: str | None = None                 # --runtime / PIC_RUNTIME
     no_project: bool = False
 
-    guix_manifest: str | None = None           # default: example shipped with pic
+    guix_manifest: str | None = None           # default: ~/.config/pic/manifest.scm or shipped example
     guix_channels: list[str] = field(default_factory=list)
     guix_network: bool = True
 
@@ -167,5 +167,5 @@ def load_config(project_dir=None, env=None, parsed=None):
     if parsed is not None:
         _apply_cli(cfg, parsed)
     if cfg.guix_manifest is None:
-        cfg.guix_manifest = str(resources.default_manifest())
+        cfg.guix_manifest = str(resources.default_manifest(env))
     return cfg

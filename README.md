@@ -58,7 +58,7 @@ add = ["/path/to/share"]    # extra paths shared into the container
 preserve = ["^MYCORP_"]     # extra env var regexps passed through
 
 [backend.guix]
-manifest = "/path/to/manifest.scm"         # default: example shipped with pic
+manifest = "/path/to/manifest.scm"         # default: ~/.config/pic/manifest.scm, else shipped example
 channels = ["/path/to/your-channel"]        # -L args for the manifest
 network = true
 

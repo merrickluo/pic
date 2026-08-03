@@ -73,6 +73,21 @@ def test_project_toml_wins_over_user(tmp_path, monkeypatch):
     assert cfg.backend == "oci"
 
 
+def test_shipped_manifest_fallback(tmp_path):
+    env = {"HOME": str(tmp_path), "PATH": "/bin"}
+    cfg = load(env=env)
+    assert cfg.guix_manifest.endswith("guix/manifest.scm")
+
+
+def test_user_manifest_default(tmp_path):
+    manifest = tmp_path / ".config" / "pic" / "manifest.scm"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("(specifications->manifest '())\n")
+    env = {"HOME": str(tmp_path), "PATH": "/bin"}
+    cfg = load(env=env)
+    assert cfg.guix_manifest == str(manifest)
+
+
 def test_toml_string_values_are_single_entries(tmp_path):
     write_toml(tmp_path / "pic.toml", """
 [shares]
