@@ -25,6 +25,7 @@ pic -c bash           a shell inside the container
 | `-V`, `--version` | version |
 | `-b`, `--backend NAME` | `guix` \| `oci` \| `auto` (default `auto`) |
 | `-c`, `--command CMD` | inner command (default: `[pic] command` or `pi`), e.g. `bash`, `claude` |
+| `-n`, `--dry-run` | print the container command pic would run, then exit |
 | `-s`, `--share PATH` | extra path shared into the container (repeatable) |
 | `-e`, `--preserve REGEX` | extra env var regexp passed through (repeatable) |
 | `--runtime VALUE` | image ref (oci/apple) — overrides config |

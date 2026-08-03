@@ -18,6 +18,7 @@ PIC-OPTIONS:
   -V, --version         show the version
   -b, --backend NAME    guix | oci | auto   (default: auto)
   -c, --command CMD     inner command (default: pi / [pic] command)
+  -n, --dry-run         print the container command and exit
   -s, --share PATH      extra path to share into the container (repeatable)
   -e, --preserve REGEX  extra env var regexp to pass through (repeatable)
       --runtime VALUE   image ref (oci/apple) — overrides config
@@ -55,6 +56,7 @@ class Parsed:
     preserves: list[str] = field(default_factory=list)
     runtime: str | None = None
     no_project: bool = False
+    dry_run: bool = False
     list_backends: bool = False
     project_dir: str | None = None
     inner: list[str] = field(default_factory=list)
@@ -93,6 +95,8 @@ def parse(argv, prog):
             raise SystemExit(0)
         elif arg == "--list-backends":
             parsed.list_backends = True
+        elif arg in ("--dry-run", "-n"):
+            parsed.dry_run = True
         elif arg == "--no-project":
             parsed.no_project = True
         elif arg in ("--command", "-c"):

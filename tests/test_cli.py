@@ -95,9 +95,15 @@ def test_missing_value_raises():
 
 
 def test_flags():
-    p = parse(["--no-project", "--list-backends"])
+    p = parse(["--no-project", "--list-backends", "-n"])
     assert p.no_project
     assert p.list_backends
+    assert p.dry_run
+
+
+def test_dry_run_long_form():
+    p = parse(["--dry-run"])
+    assert p.dry_run
 
 
 def test_help_exits_zero_and_prints_pic_help(capsys):
@@ -132,3 +138,25 @@ def test_inner_command_prefixes_args():
 def test_inner_command_custom():
     assert inner_command("bash", ["-l"]) == ["bash", "-l"]
     assert inner_command("fish", []) == ["fish"]
+
+
+def test_dry_run_prints_argv(monkeypatch, capsys):
+    from pic.launch import run_pic
+
+    class FakeBackend:
+        def project_env(self, workspace, config):
+            return None
+
+        def validate(self, spec, config, env):
+            pass
+
+        def build_argv(self, spec, config, env):
+            return ["guix", "shell", "-C", "-m", "/m.scm", "--", "pi"]
+
+    monkeypatch.setattr("pic.launch.select_backend",
+                        lambda config, env: FakeBackend())
+    code = run_pic(cli.Parsed(dry_run=True),
+                   env={"HOME": "/h", "PATH": "/bin"})
+    assert code == 0
+    assert capsys.readouterr().out.strip() == \
+        "guix shell -C -m /m.scm -- pi"

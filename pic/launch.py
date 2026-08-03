@@ -1,6 +1,10 @@
 """Orchestration: config -> backend selection -> spec -> exec."""
 
 import os
+import shlex
+import shutil
+
+import os
 import shutil
 
 from .backends import BACKENDS, select_backend
@@ -23,6 +27,9 @@ def run_pic(parsed, env=None):
         backend.validate(spec, config, env)
     except PicError as e:
         die(str(e))
+    if parsed.dry_run:
+        print(shlex.join(backend.build_argv(spec, config, env)))
+        return 0
     launch(backend, spec, config, env)
 
 
