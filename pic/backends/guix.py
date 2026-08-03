@@ -36,6 +36,12 @@ class GuixBackend(Backend):
             raise PicError(
                 f"pic: agent manifest not found: {config.guix_manifest}\n"
                 f"  Point [backend.guix].manifest at an existing file.")
+        for channel in config.guix_channels:
+            if not os.path.isdir(expand_path(channel, env)):
+                raise PicError(
+                    f"pic: guix channel not found: {channel}\n"
+                    f"  Point [backend.guix].channels at an existing "
+                    f"channel checkout (clone it with `git clone`).")
 
     def build_argv(self, spec, config, env):
         argv = ["guix", "shell", "-C"]

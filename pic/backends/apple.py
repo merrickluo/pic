@@ -12,7 +12,7 @@ import re
 import shutil
 
 from ..spec import ProjectEnv
-from ..util import PicError
+from ..util import PicError, expand_path
 from .base import Backend
 
 
@@ -40,6 +40,9 @@ class AppleBackend(Backend):
         if config.apple_ssh:
             argv.append("--ssh")
         argv += [f"-v{p}:{p}" for p in spec.shares]
+        # the Linux image user (root) has a different home; point $HOME at
+        # the mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ...
+        argv += ["-e", f"HOME={expand_path('~', env)}"]
         for key in inherit_env(spec.preserves, env):
             argv += ["-e", key]
         argv += ["-w", str(spec.workspace)]

@@ -15,7 +15,7 @@ import re
 import shutil
 
 from ..spec import ProjectEnv
-from ..util import PicError
+from ..util import PicError, expand_path
 from .base import Backend
 
 
@@ -49,6 +49,9 @@ class OciBackend(Backend):
         argv = [driver, "run", "--rm", "-it"]
         argv += ["--network", config.oci_network]
         argv += [f"-v{p}:{p}" for p in spec.shares]
+        # the image user (root) has a different home; point $HOME at the
+        # mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ...
+        argv += ["-e", f"HOME={expand_path('~', env)}"]
         for key, value in expand_env(spec.preserves, env):
             argv += ["-e", f"{key}={value}"]
         argv += ["-w", str(spec.workspace)]

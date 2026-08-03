@@ -80,6 +80,12 @@ def test_guix_validate_present_manifest_passes(tmp_path):
     GuixBackend().validate(spec(), cfg, ENV)  # must not raise
 
 
+def test_guix_validate_missing_channel_raises():
+    cfg = Config(guix_manifest="/m.scm", guix_channels=["~/no/such/channel"])
+    with pytest.raises(PicError, match="channel not found"):
+        GuixBackend().validate(spec(), cfg, ENV)
+
+
 def test_guix_project_env_guix_scm_dev_mode(tmp_path):
     (tmp_path / "guix.scm").write_text("(define-public x 1)\n")
     env = GuixBackend().project_env(tmp_path, Config())
@@ -108,6 +114,14 @@ def test_oci_golden_argv():
     assert "-e" in argv and "ANTHROPIC_API_KEY=sk-123" in argv
     assert argv[-5:] == ["-w", "/w", "ghcr.io/merrickluo/pi-agent:latest",
                          "pi", "--continue"]
+
+
+def test_oci_sets_home_env():
+    """The container runs as the image user (root); point $HOME at the
+    mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ..."""
+    cfg = Config(oci_driver="podman")
+    argv = OciBackend().build_argv(spec(), cfg, ENV)
+    assert "-e" in argv and "HOME=/home/tester" in argv
 
 
 def test_oci_runtime_overrides_image():
@@ -165,6 +179,14 @@ def test_apple_golden_argv():
     assert "-e" in argv and "ANTHROPIC_API_KEY" in argv
     assert "sk-123" not in argv  # bare key; the tool inherits the value
     assert argv[-4:] == ["-w", "/w", "img:1", "pi"]
+
+
+def test_apple_sets_home_env():
+    """Same $HOME fix as oci: the Linux image runs as root, the mounted
+    shares are host-home paths."""
+    cfg = Config()
+    argv = AppleBackend().build_argv(spec(command=("pi",)), cfg, ENV)
+    assert "-e" in argv and "HOME=/home/tester" in argv
 
 
 def test_apple_runtime_overrides_image():
