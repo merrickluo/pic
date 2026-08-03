@@ -28,20 +28,15 @@ def spec(workspace="/w", shares=("/s1", "/s2"), preserves=("^A_",),
 
 # --- guix backend ---------------------------------------------------
 
-def test_guix_profile_mode_golden_argv():
-    cfg = Config(guix_profile="~/prof")
-    argv = GuixBackend().build_argv(spec(runtime=None), cfg, ENV)
+def test_guix_manifest_mode_golden_argv():
+    cfg = Config(guix_manifest="/m.scm", guix_channels=["/ch"])
+    argv = GuixBackend().build_argv(spec(), cfg, ENV)
     assert argv[:3] == ["guix", "shell", "-C"]
     assert "--network" in argv
     assert "--share=/s1" in argv and "--share=/s2" in argv
     assert "--preserve=^A_" in argv
-    assert argv[-5:] == ["-p", "/home/tester/prof", "--", "pi", "--continue"]
-
-
-def test_guix_profile_mode_uses_spec_runtime():
-    cfg = Config()
-    argv = GuixBackend().build_argv(spec(runtime="/custom/prof"), cfg, ENV)
-    assert argv[-5:] == ["-p", "/custom/prof", "--", "pi", "--continue"]
+    assert "-L" in argv and "/ch" in argv
+    assert argv[-5:] == ["-m", "/m.scm", "--", "pi", "--continue"]
 
 
 def test_guix_workspace_not_shared_twice():
@@ -66,49 +61,23 @@ def test_guix_network_off():
     assert "--network" not in argv
 
 
-def test_guix_validate_missing_profile_raises():
-    cfg = Config(guix_profile="/does/not/exist/prof")
-    with pytest.raises(PicError, match="profile not found"):
+def test_guix_validate_missing_manifest_raises():
+    cfg = Config(guix_manifest="/does/not/exist/m.scm")
+    with pytest.raises(PicError, match="manifest not found"):
         GuixBackend().validate(spec(), cfg, ENV)
 
 
-def test_guix_validate_present_profile_passes(tmp_path):
-    cfg = Config(guix_profile=str(tmp_path))
+def test_guix_validate_present_manifest_passes(tmp_path):
+    manifest = tmp_path / "m.scm"
+    manifest.write_text("(specifications->manifest '())\n")
+    cfg = Config(guix_manifest=str(manifest))
     GuixBackend().validate(spec(), cfg, ENV)  # must not raise
-
-
-def test_guix_validate_skipped_in_project_mode(tmp_path):
-    cfg = Config(guix_profile="/does/not/exist")
-    GuixBackend().validate(spec(project=ProjectEnv(["-m", "x"])), cfg, ENV)
 
 
 def test_guix_project_env_guix_scm_dev_mode(tmp_path):
     (tmp_path / "guix.scm").write_text("(define-public x 1)\n")
     env = GuixBackend().project_env(tmp_path, Config())
     assert env.container_args == ["-D", "-f", str(tmp_path / "guix.scm")]
-
-
-def test_guix_project_env_uses_profile_when_present(tmp_path):
-    (tmp_path / "guix.scm").write_text("(define-public x 1)\n")
-    profile = tmp_path / "prof"
-    profile.mkdir()
-    project = GuixBackend().project_env(tmp_path, Config())
-    cfg = Config(guix_profile=str(profile), guix_manifest="/agent-m.scm",
-                 guix_channels=["/ch"])
-    argv = GuixBackend().build_argv(spec(project=project), cfg, ENV)
-    assert argv[-5:] == ["-p", str(profile), "--", "pi", "--continue"]
-    assert "-m" not in argv and "-L" not in argv and "-D" not in argv
-
-
-def test_guix_project_env_uses_runtime_when_present(tmp_path):
-    (tmp_path / "guix.scm").write_text("(define-public x 1)\n")
-    profile = tmp_path / "prof"
-    profile.mkdir()
-    project = GuixBackend().project_env(tmp_path, Config())
-    cfg = Config(guix_manifest="/agent-m.scm")
-    argv = GuixBackend().build_argv(spec(project=project, runtime=str(profile)),
-                                    cfg, ENV)
-    assert argv[-5:] == ["-p", str(profile), "--", "pi", "--continue"]
 
 
 def test_guix_project_env_manifest_scm(tmp_path):

@@ -27,7 +27,7 @@ class RuntimeSpec:
     workspace: Path             # project dir; always shared read-write
     shares: list[Path]          # existing paths only, `~`/uid expanded
     preserves: list[str]        # env var regexps (backend decides how to apply)
-    runtime: str | None         # profile path (guix) or image ref (oci)
+    runtime: str | None         # image ref (oci/apple)
     project: ProjectEnv | None  # dev environment discovered by the backend
     command: list[str]          # inner command, defaults resolved by the CLI
 

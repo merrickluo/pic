@@ -49,7 +49,6 @@ class Config:
     runtime: str | None = None                 # --runtime / PIC_RUNTIME
     no_project: bool = False
 
-    guix_profile: str = "~/.guix-home/extra-profiles/agent"
     guix_manifest: str | None = None           # default: example shipped with pic
     guix_channels: list[str] = field(default_factory=list)
     guix_network: bool = True
@@ -98,8 +97,6 @@ def _apply_toml(cfg, data, source):
     if "preserve" in env:
         cfg.extra_preserves += [str(r) for r in env["preserve"]]
     guix = data.get("backend", {}).get("guix", {})
-    if "profile" in guix:
-        cfg.guix_profile = str(guix["profile"])
     if "manifest" in guix:
         cfg.guix_manifest = str(guix["manifest"])
     if "channels" in guix:

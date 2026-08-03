@@ -27,7 +27,7 @@ pic -c bash           a shell inside the container
 | `-c`, `--command CMD` | inner command (default: `[pic] command` or `pi`), e.g. `bash`, `claude` |
 | `-s`, `--share PATH` | extra path shared into the container (repeatable) |
 | `-e`, `--preserve REGEX` | extra env var regexp passed through (repeatable) |
-| `--runtime VALUE` | profile path (guix) or image ref (oci) — overrides config |
+| `--runtime VALUE` | image ref (oci/apple) — overrides config |
 | `--no-project` | ignore `pic.toml` and project env detection |
 | `--list-backends` | list backends and exit |
 
@@ -57,9 +57,8 @@ add = ["/path/to/share"]    # extra paths shared into the container
 preserve = ["^MYCORP_"]     # extra env var regexps passed through
 
 [backend.guix]
-profile = "~/.guix-extra-profiles/agent"   # profile-mode runtime
 manifest = "/path/to/manifest.scm"         # default: example shipped with pic
-channels = ["/path/to/channel"]            # -L args for the manifest
+channels = ["/path/to/your-channel"]        # -L args for the manifest
 network = true
 
 [backend.oci]
@@ -76,12 +75,11 @@ ssh = true                  # forward the SSH agent socket
 
 ## Backends
 
-- **guix** — `guix shell -C`. When an agent profile exists it is the
-  whole environment (guix shell cannot merge `--profile` with package
-  options). Without one, project-env mode combines the agent manifest
-  with the project's `guix.scm` (development mode) or `manifest.scm`
-  (as a manifest). The agent profile is never built on demand — pic
-  errors with the exact build command instead.
+- **guix** — `guix shell -C` with the agent manifest (`-m`); local
+  channels that provide agent packages go in `[backend.guix] channels`
+  (`-L`). When the project has a dev environment it is added on top:
+  `guix.scm` in development mode (`-D -f`), `manifest.scm` as a
+  manifest.
 - **oci** — podman or docker with a prebuilt agent image. Env preserve
   regexps are expanded against the host environment.
 - **apple** — Apple's `container` (macOS 26, Apple silicon), OCI-compatible.

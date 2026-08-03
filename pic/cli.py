@@ -20,7 +20,7 @@ PIC-OPTIONS:
   -c, --command CMD     inner command (default: pi / [pic] command)
   -s, --share PATH      extra path to share into the container (repeatable)
   -e, --preserve REGEX  extra env var regexp to pass through (repeatable)
-      --runtime VALUE   profile path (guix) or image ref (oci)
+      --runtime VALUE   image ref (oci/apple) — overrides config
       --no-project      ignore pic.toml and project env detection
       --list-backends   list the backends and exit
 
