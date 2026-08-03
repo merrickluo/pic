@@ -32,9 +32,10 @@ class GuixBackend(Backend):
         return None
 
     def validate(self, spec, config, env):
-        if not os.path.isfile(config.guix_manifest):
+        manifest = expand_path(str(config.guix_manifest), env)
+        if not os.path.isfile(manifest):
             raise PicError(
-                f"pic: agent manifest not found: {config.guix_manifest}\n"
+                f"pic: agent manifest not found: {manifest}\n"
                 f"  Point [backend.guix].manifest at an existing file.")
         for channel in config.guix_channels:
             if not os.path.isdir(expand_path(channel, env)):
@@ -52,7 +53,7 @@ class GuixBackend(Backend):
         argv += [f"--preserve={r}" for r in spec.preserves]
         for channel in config.guix_channels:
             argv += ["-L", expand_path(channel, env)]
-        argv += ["-m", str(config.guix_manifest)]
+        argv += ["-m", expand_path(str(config.guix_manifest), env)]
         if spec.project is not None:
             argv += spec.project.container_args
         argv += ["--"] + spec.command

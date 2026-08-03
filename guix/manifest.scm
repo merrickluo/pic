@@ -11,12 +11,13 @@
 (use-modules (guix profiles))
 
 (specifications->manifest
-  (list "pi-coding-agent"
-        "python"
-        "bash"
-        "git"
-        "openssh"
-        "nss-certs"
-        "gnupg"
-        "fd"
-        "ripgrep"))
+ (list "pi-coding-agent"
+       "python"
+       "bash"
+       "git"
+       "openssh"
+       "nss-certs"
+       "gnupg"
+       "fd"
+       "ripgrep"
+       "mise"))

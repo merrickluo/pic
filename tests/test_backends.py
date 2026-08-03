@@ -52,6 +52,18 @@ def test_guix_channels_expand_tilde():
     assert "/home/tester/ch" in argv
 
 
+def test_guix_manifest_expand_tilde(tmp_path):
+    home = tmp_path / "home"
+    manifest = home / "m.scm"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("(specifications->manifest '())\n")
+    env = dict(ENV, HOME=str(home))
+    cfg = Config(guix_manifest="~/m.scm")
+    GuixBackend().validate(spec(), cfg, env)  # must not raise
+    argv = GuixBackend().build_argv(spec(), cfg, env)
+    assert str(manifest) in argv
+
+
 def test_guix_project_env_golden_argv():
     cfg = Config(guix_channels=["/ch1", "/ch2"], guix_manifest="/m.scm")
     project = ProjectEnv(container_args=["-D", "-f", "/w/guix.scm"])
