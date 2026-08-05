@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 *.egg-info/
+
+# local project config (machine-specific shares)
+/pic.toml
