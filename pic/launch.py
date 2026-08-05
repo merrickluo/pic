@@ -4,9 +4,6 @@ import os
 import shlex
 import shutil
 
-import os
-import shutil
-
 from .backends import BACKENDS, select_backend
 from .config import load_config
 from .spec import assemble, inner_command
