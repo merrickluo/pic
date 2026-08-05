@@ -13,12 +13,10 @@ natively.  These are the semantic differences the spec absorbs.
 """
 
 import os
-import re
 import shutil
 
-from ..spec import ProjectEnv
-from ..util import PicError, expand_path
-from .base import Backend
+from ..util import PicError
+from .base import Backend, home_env, match_env, run_tail
 
 
 class OciBackend(Backend):
@@ -54,12 +52,10 @@ class OciBackend(Backend):
         argv += [f"-v{p}:{p}" for p in spec.shares]
         # the image user (root) has a different home; point $HOME at the
         # mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ...
-        argv += ["-e", f"HOME={expand_path('~', env)}"]
-        for key, value in expand_env(spec.preserves, env):
+        argv += ["-e", home_env(env)]
+        for key, value in match_env(spec.preserves, env):
             argv += ["-e", f"{key}={value}"]
-        argv += ["-w", str(spec.workspace)]
-        argv += [spec.runtime or config.oci_image]
-        argv += spec.command
+        argv += run_tail(spec, spec.runtime or config.oci_image)
         return argv
 
 
@@ -77,18 +73,3 @@ def identity_args(driver):
     if driver == "podman" and os.geteuid() != 0:
         return [f"--userns=keep-id:uid={uid},gid={gid}"] + user
     return user
-
-
-def expand_env(preserves, env=None):
-    """Expand PRESERVES (regexps) into the matching (KEY, VALUE) pairs.
-
-    Iteration order follows the host environment order, which keeps the
-    argv deterministic for a given environment.
-    """
-    env = env if env is not None else os.environ
-    patterns = [re.compile(regexp) for regexp in preserves]
-    result = []
-    for key, value in env.items():
-        if any(p.match(key) for p in patterns):
-            result.append((key, value))
-    return result

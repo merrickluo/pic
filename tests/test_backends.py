@@ -3,9 +3,10 @@
 import pytest
 
 from pic.backends import BACKENDS, select_backend
-from pic.backends.apple import AppleBackend, inherit_env
+from pic.backends.apple import AppleBackend
+from pic.backends.base import match_env
 from pic.backends.guix import GuixBackend
-from pic.backends.oci import OciBackend, expand_env
+from pic.backends.oci import OciBackend
 from pic.config import Config
 from pic.spec import ProjectEnv, RuntimeSpec
 from pic.util import PicError
@@ -117,6 +118,21 @@ def test_guix_project_env_none(tmp_path):
     assert GuixBackend().project_env(tmp_path, Config()) is None
 
 
+# --- base helpers --------------------------------------------------
+
+def test_match_env_pairs_in_host_order():
+    env = {"ANTHROPIC_API_KEY": "a", "OPENAI_KEY": "b",
+           "MYVAR_1": "c", "HOME": "/h"}
+    pairs = match_env([r"^(ANTHROPIC|OPENAI)_", "^MYVAR_"], env)
+    assert pairs == [("ANTHROPIC_API_KEY", "a"), ("OPENAI_KEY", "b"),
+                     ("MYVAR_1", "c")]
+
+
+def test_match_env_bad_regexp_raises():
+    with pytest.raises(PicError, match="bad preserve regexp"):
+        match_env(["^(BROKEN"], {})
+
+
 # --- oci backend ----------------------------------------------------
 
 def test_oci_golden_argv(monkeypatch):
@@ -210,14 +226,6 @@ def test_oci_project_env_none(tmp_path):
     assert OciBackend().project_env(tmp_path, Config()) is None
 
 
-def test_expand_env_matches_regexps():
-    env = {"ANTHROPIC_API_KEY": "a", "OPENAI_KEY": "b",
-           "MYVAR_1": "c", "HOME": "/h"}
-    pairs = expand_env([r"^(ANTHROPIC|OPENAI)_", "^MYVAR_"], env)
-    assert pairs == [("ANTHROPIC_API_KEY", "a"), ("OPENAI_KEY", "b"),
-                     ("MYVAR_1", "c")]
-
-
 # --- apple backend -------------------------------------------------
 
 def test_apple_golden_argv(monkeypatch):
@@ -262,13 +270,6 @@ def test_apple_init_ssh_toggle():
     cfg = Config(apple_init=False, apple_ssh=False)
     argv = AppleBackend().build_argv(spec(command=("pi",)), cfg, ENV)
     assert "--init" not in argv and "--ssh" not in argv
-
-
-def test_apple_inherit_env_bare_keys():
-    env = {"ANTHROPIC_API_KEY": "a", "OPENAI_KEY": "b", "MYVAR_1": "c",
-           "HOME": "/h"}
-    keys = inherit_env([r"^(ANTHROPIC|OPENAI)_", "^MYVAR_"], env)
-    assert keys == ["ANTHROPIC_API_KEY", "OPENAI_KEY", "MYVAR_1"]
 
 
 def test_apple_no_container_validate_raises(monkeypatch):

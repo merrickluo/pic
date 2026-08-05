@@ -8,6 +8,36 @@ name except through the registry in pic/backends/__init__.py.
 
 from abc import ABC, abstractmethod
 
+import re
+
+from ..util import PicError, expand_path
+
+
+def match_env(preserves, env):
+    """(KEY, VALUE) pairs from ENV whose key matches a PRESERVES regexp.
+
+    Order follows the host environment, which keeps the argv
+    deterministic.  Raises PicError on a malformed regexp.
+    """
+    patterns = []
+    for regexp in preserves:
+        try:
+            patterns.append(re.compile(regexp))
+        except re.error as e:
+            raise PicError(f"pic: bad preserve regexp: {regexp!r}: {e}")
+    return [(key, value) for key, value in env.items()
+            if any(p.match(key) for p in patterns)]
+
+
+def home_env(env):
+    """The -e HOME=... value pointing at the mounted host home."""
+    return f"HOME={expand_path('~', env)}"
+
+
+def run_tail(spec, image):
+    """Shared docker-shaped argv tail: workdir, image, inner command."""
+    return ["-w", str(spec.workspace), image, *spec.command]
+
 
 class Backend(ABC):
     """A container technology that can host the agent."""

@@ -8,13 +8,10 @@ forwards the SSH agent socket.  Like oci, the container runs as the
 host uid:gid (--user) so files keep host ownership.
 """
 
-import os
-import re
 import shutil
 
-from ..spec import ProjectEnv
-from ..util import PicError, expand_path
-from .base import Backend
+from ..util import PicError
+from .base import Backend, home_env, match_env, run_tail
 from .oci import identity_args
 
 
@@ -46,22 +43,10 @@ class AppleBackend(Backend):
         argv += [f"--volume={p}:{p}" for p in spec.shares]
         # the Linux image user (root) has a different home; point $HOME at
         # the mounted host home so pi finds ~/.pi, ~/.ssh, ~/.gitconfig, ...
-        argv += ["-e", f"HOME={expand_path('~', env)}"]
-        for key in inherit_env(spec.preserves, env):
+        argv += ["-e", home_env(env)]
+        # `-e KEY` inherits the value from the host; only the key is passed
+        for key, _value in match_env(spec.preserves, env):
             argv += ["-e", key]
-        argv += ["-w", str(spec.workspace)]
-        argv += [spec.runtime or config.apple_image]
-        argv += spec.command
+        argv += run_tail(spec, spec.runtime or config.apple_image)
         return argv
 
-
-def inherit_env(preserves, env=None):
-    """Keys from ENV matching PRESERVES, for `-e KEY` host inheritance.
-
-    The container tool copies the value from the host environment, so
-    only the key is passed.  Order follows the host environment, which
-    keeps the argv deterministic.
-    """
-    env = env if env is not None else os.environ
-    patterns = [re.compile(regexp) for regexp in preserves]
-    return [key for key in env if any(p.match(key) for p in patterns)]
