@@ -30,7 +30,7 @@ PIC_PRESERVE (whitespace-separated), PIC_RUNTIME, PIC_NO_PROJECT.
 
 Configuration (schema in README.md):
   ~/.config/pic/config.toml        user defaults
-  <project>/pic.toml         project overrides
+  <project>/pic.toml         project overrides (project: PROJECT-DIR, else cwd)
 
 Precedence (low to high):
   builtin defaults < user pic.toml < project pic.toml < environment < flags

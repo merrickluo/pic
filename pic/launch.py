@@ -10,11 +10,23 @@ from .spec import assemble, inner_command
 from .util import PicError, die
 
 
+def config_project_dir(parsed, env):
+    """The directory whose pic.toml is read, or None with --no-project.
+
+    Defaults to the cwd so a bare `pic` inside a project picks up its
+    pic.toml, matching the workspace fallback in spec.assemble.
+    """
+    if parsed.no_project or env.get("PIC_NO_PROJECT"):
+        return None
+    return parsed.project_dir or os.getcwd()
+
+
 def run_pic(parsed, env=None):
     """Resolve the backend and launch the container.  Never returns on
     success (os.execv replaces the process)."""
     env = env if env is not None else os.environ
-    config = load_config(parsed.project_dir, env=env, parsed=parsed)
+    config = load_config(config_project_dir(parsed, env), env=env,
+                         parsed=parsed)
     backend = select_backend(config, env)
     spec = assemble(config, parsed.project_dir,
                     inner_command(config.command, parsed.inner), env=env)

@@ -41,6 +41,9 @@ builtin defaults < ~/.config/pic/config.toml < <project>/pic.toml
                  < environment < command line
 ```
 
+`<project>` is PROJECT-DIR, defaulting to the current directory;
+`--no-project` skips the project pic.toml and project env detection.
+
 Environment: `PIC_BACKEND`, `PIC_COMMAND`, `PIC_SHARE` (colon-separated),
 `PIC_PRESERVE` (whitespace-separated), `PIC_RUNTIME`, `PIC_NO_PROJECT`.
 
