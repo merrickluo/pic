@@ -55,6 +55,34 @@ def test_preserves_copied():
     assert spec.preserves is not cfg.preserves  # copied, not aliased
 
 
+def test_bad_preserve_regexp_dies(capsys):
+    cfg = Config(extra_preserves=["^(BROKEN"])
+    with pytest.raises(SystemExit) as exc:
+        assemble(cfg, "/tmp", ["pi"], env={"HOME": "/h"})
+    assert exc.value.code == 1
+    err = capsys.readouterr().err
+    assert "bad preserve regexp" in err
+    assert "^(BROKEN" in err
+
+
+def test_share_path_unknown_template_dies(capsys):
+    cfg = Config(extra_shares=["/run/user/{oops}"])
+    with pytest.raises(SystemExit) as exc:
+        assemble(cfg, "/tmp", ["pi"], env={"HOME": "/h"})
+    assert exc.value.code == 1
+    err = capsys.readouterr().err
+    assert "bad share path" in err
+    assert "/run/user/{oops}" in err
+
+
+def test_share_path_lone_brace_dies(capsys):
+    cfg = Config(extra_shares=["/run/user/{uid"])
+    with pytest.raises(SystemExit) as exc:
+        assemble(cfg, "/tmp", ["pi"], env={"HOME": "/h"})
+    assert exc.value.code == 1
+    assert "bad share path" in capsys.readouterr().err
+
+
 def test_runtime_passthrough():
     spec = assemble(Config(runtime="img:1"), "/tmp", ["pi"],
                     env={"HOME": "/h"})

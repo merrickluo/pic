@@ -1,6 +1,7 @@
 """RuntimeSpec: the pure data contract between frontend and backends."""
 
 import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -32,16 +33,35 @@ class RuntimeSpec:
     command: list[str]          # inner command, defaults resolved by the CLI
 
 
+def _check_preserves(preserves):
+    """Die with a helpful message on a malformed preserve regexp."""
+    for regexp in preserves:
+        try:
+            re.compile(regexp)
+        except re.error as e:
+            die(f"pic: bad preserve regexp: {regexp!r}: {e}")
+
+
+def _expand_share_template(raw):
+    """Expand {uid} in a share path; die on a malformed template."""
+    try:
+        return raw.format(uid=os.getuid())
+    except (KeyError, IndexError, ValueError) as e:
+        die(f"pic: bad share path: {raw!r} "
+            f"(only {{uid}} is supported: {e})")
+
+
 def assemble(config, project_dir, inner, env=None):
     """Build the RuntimeSpec for the merged CONFIG and CLI INNER args."""
     env = env if env is not None else os.environ
     workspace = Path(project_dir or os.getcwd()).resolve()
     if not workspace.is_dir():
         die(f"pic: project directory not found: {workspace}")
+    _check_preserves(config.preserves)
 
     shares = []
     for raw in config.shares:
-        path = expand_path(raw.format(uid=os.getuid()), env)
+        path = expand_path(_expand_share_template(raw), env)
         if os.path.exists(path):
             shares.append(Path(path))
         else:
