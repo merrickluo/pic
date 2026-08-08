@@ -17,6 +17,8 @@
        "git"
        "openssh"
        "nss-certs"
+       "coreutils"
+       "curl"
        "gnupg"
        "fd"
        "ripgrep"
