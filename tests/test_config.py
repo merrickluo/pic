@@ -16,6 +16,13 @@ def load(project_dir=None, env=None, parsed=None):
     return config.load_config(project_dir, env=env, parsed=parsed)
 
 
+@pytest.fixture(autouse=True)
+def _isolate_user_config(tmp_path, monkeypatch):
+    """Never read the host's real user configuration."""
+    monkeypatch.setattr(config, "USER_CONFIG",
+                        tmp_path / "missing-user-config.toml")
+
+
 # --- defaults -------------------------------------------------------
 
 def test_builtin_defaults():
@@ -28,10 +35,10 @@ def test_builtin_defaults():
     assert cfg.guix_manifest  # shipped default resolved
 
 
-# --- pic.toml layers -------------------------------------------------
+# --- .pic/config.toml layers ------------------------------------------
 
 def test_project_toml_overrides_and_appends(tmp_path):
-    write_toml(tmp_path / "pic.toml", """
+    write_toml(tmp_path / ".pic" / "config.toml", """
 [pic]
 backend = "oci"
 no_project = true
@@ -67,7 +74,8 @@ channels = ["/home/tester/projs/meex"]
 def test_project_toml_wins_over_user(tmp_path, monkeypatch):
     user = tmp_path / "user.toml"
     write_toml(user, '[pic]\nbackend = "guix"\n')
-    write_toml(tmp_path / "proj" / "pic.toml", '[pic]\nbackend = "oci"\n')
+    write_toml(tmp_path / "proj" / ".pic" / "config.toml",
+               '[pic]\nbackend = "oci"\n')
     monkeypatch.setattr(config, "USER_CONFIG", user)
     cfg = load(project_dir=str(tmp_path / "proj"))
     assert cfg.backend == "oci"
@@ -89,7 +97,7 @@ def test_user_manifest_default(tmp_path):
 
 
 def test_toml_string_values_are_single_entries(tmp_path):
-    write_toml(tmp_path / "pic.toml", """
+    write_toml(tmp_path / ".pic" / "config.toml", """
 [shares]
 add = "~/mytool"
 
@@ -106,7 +114,7 @@ channels = "~/projs/meex"
 
 
 def test_bad_toml_dies(tmp_path, capsys):
-    write_toml(tmp_path / "pic.toml", "[unclosed\n")
+    write_toml(tmp_path / ".pic" / "config.toml", "[unclosed\n")
     with pytest.raises(SystemExit) as exc:
         load(project_dir=str(tmp_path))
     assert exc.value.code == 1
@@ -116,13 +124,13 @@ def test_bad_toml_dies(tmp_path, capsys):
 # --- default command ------------------------------------------------
 
 def test_toml_command(tmp_path):
-    write_toml(tmp_path / "pic.toml", '[pic]\ncommand = "claude"\n')
+    write_toml(tmp_path / ".pic" / "config.toml", '[pic]\ncommand = "claude"\n')
     cfg = load(project_dir=str(tmp_path))
     assert cfg.command == "claude"
 
 
 def test_env_command_overrides_toml(tmp_path):
-    write_toml(tmp_path / "pic.toml", '[pic]\ncommand = "claude"\n')
+    write_toml(tmp_path / ".pic" / "config.toml", '[pic]\ncommand = "claude"\n')
     env = {"HOME": "/home/tester", "PIC_COMMAND": "fish"}
     cfg = load(project_dir=str(tmp_path), env=env)
     assert cfg.command == "fish"
@@ -138,7 +146,7 @@ def test_cli_command_wins_over_env():
 # --- environment and flags ------------------------------------------
 
 def test_env_overrides_project(tmp_path):
-    write_toml(tmp_path / "pic.toml", '[pic]\nbackend = "guix"\n')
+    write_toml(tmp_path / ".pic" / "config.toml", '[pic]\nbackend = "guix"\n')
     env = {"HOME": "/home/tester", "PIC_BACKEND": "oci",
            "PIC_SHARE": "/a:/b", "PIC_PRESERVE": "^A_ ^B_",
            "PIC_RUNTIME": "img:1", "PIC_NO_PROJECT": "1"}
@@ -164,7 +172,7 @@ def test_cli_wins_over_env():
 
 def test_accumulation_order(tmp_path):
     # shares/preserves accumulate: project first, then env, then flags
-    write_toml(tmp_path / "pic.toml", """
+    write_toml(tmp_path / ".pic" / "config.toml", """
 [shares]
 add = ["/proj"]
 

@@ -11,10 +11,11 @@ from .util import PicError, die
 
 
 def config_project_dir(parsed, env):
-    """The directory whose pic.toml is read, or None with --no-project.
+    """The directory whose .pic/config.toml is read, or None with
+    --no-project.
 
     Defaults to the cwd so a bare `pic` inside a project picks up its
-    pic.toml, matching the workspace fallback in spec.assemble.
+    .pic/config.toml, matching the workspace fallback in spec.assemble.
     """
     if parsed.no_project or env.get("PIC_NO_PROJECT"):
         return None

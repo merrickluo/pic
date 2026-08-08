@@ -29,7 +29,7 @@ pic -c bash           a shell inside the container
 | `-s`, `--share PATH` | extra path shared into the container (repeatable) |
 | `-e`, `--preserve REGEX` | extra env var regexp passed through (repeatable) |
 | `--runtime VALUE` | image ref (oci/apple) — overrides config |
-| `--no-project` | ignore `pic.toml` and project env detection |
+| `--no-project` | ignore `.pic/config.toml` and project env detection |
 | `--list-backends` | list backends and exit |
 
 ## Configuration
@@ -37,17 +37,17 @@ pic -c bash           a shell inside the container
 Precedence, low to high:
 
 ```
-builtin defaults < ~/.config/pic/config.toml < <project>/pic.toml
+builtin defaults < ~/.config/pic/config.toml < <project>/.pic/config.toml
                  < environment < command line
 ```
 
 `<project>` is PROJECT-DIR, defaulting to the current directory;
-`--no-project` skips the project pic.toml and project env detection.
+`--no-project` skips the project config.toml and project env detection.
 
 Environment: `PIC_BACKEND`, `PIC_COMMAND`, `PIC_SHARE` (colon-separated),
 `PIC_PRESERVE` (whitespace-separated), `PIC_RUNTIME`, `PIC_NO_PROJECT`.
 
-`pic.toml` schema (project overrides user):
+`config.toml` schema (same for user and project; project overrides user):
 
 ```toml
 [pic]
@@ -108,7 +108,7 @@ pic/
 ├── guix.scm                   package definition for pic itself
 ├── pic/
 │   ├── cli.py                 arg parsing (the `--` boundary), help
-│   ├── config.py              pic.toml + env + flag merging
+│   ├── config.py              config.toml + env + flag merging
 │   ├── spec.py                RuntimeSpec / ProjectEnv, share expansion
 │   ├── launch.py              orchestration: config → backend → exec
 │   ├── resources.py           paths to shipped resources

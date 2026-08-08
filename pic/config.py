@@ -1,10 +1,10 @@
-"""Configuration: builtin defaults, pic.toml (user + project), env, flags.
+"""Configuration: builtin defaults, TOML (user + project), env, flags.
 
 Precedence (low to high):
 
     builtin defaults
       < ~/.config/pic/config.toml
-      < <project>/pic.toml
+      < <project>/.pic/config.toml
       < environment (PIC_BACKEND, PIC_SHARE, PIC_PRESERVE, PIC_RUNTIME, ...)
       < command line flags
 """
@@ -18,7 +18,7 @@ from . import resources
 from .util import die
 
 USER_CONFIG = Path("~/.config/pic/config.toml").expanduser()
-PROJECT_CONFIG = "pic.toml"
+PROJECT_CONFIG = ".pic/config.toml"
 
 #: Default paths shared into the container (existing ones only; `~`, $HOME
 #: and {uid} are expanded later).  The workspace itself is always shared.

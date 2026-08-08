@@ -6,7 +6,7 @@ from pic.launch import config_project_dir
 
 
 def test_config_project_dir_defaults_to_cwd(tmp_path, monkeypatch):
-    """A bare `pic` inside a project reads that project's pic.toml."""
+    """A bare `pic` inside a project reads that project's .pic/config.toml."""
     monkeypatch.chdir(tmp_path)
     assert config_project_dir(cli.Parsed(), {}) == str(tmp_path)
 
@@ -26,7 +26,9 @@ def test_config_project_dir_no_project_env(tmp_path, monkeypatch):
 
 
 def test_bare_pic_reads_cwd_pic_toml(tmp_path, monkeypatch):
-    (tmp_path / "pic.toml").write_text('[pic]\ncommand = "bash"\n')
+    dot = tmp_path / ".pic"
+    dot.mkdir()
+    (dot / "config.toml").write_text('[pic]\ncommand = "bash"\n')
     monkeypatch.chdir(tmp_path)
     project_dir = config_project_dir(cli.Parsed(), {"HOME": "/h"})
     cfg = load_config(project_dir, env={"HOME": "/h"})

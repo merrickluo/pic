@@ -2,7 +2,7 @@
 
 pic owns the arguments before a bare `--`; everything after it goes
 verbatim to the inner command, which defaults to `pi` (set with `-c` or
-`[pic] command` in pic.toml, e.g. `pic -c bash` for a shell).  There is
+`[pic] command` in .pic/config.toml, e.g. `pic -c bash` for a shell).  There is
 deliberately no table of pi's options: the boundary is the `--` itself,
 so pi releases can change their CLI freely.
 
@@ -22,18 +22,18 @@ PIC-OPTIONS:
   -s, --share PATH      extra path to share into the container (repeatable)
   -e, --preserve REGEX  extra env var regexp to pass through (repeatable)
       --runtime VALUE   image ref (oci/apple) — overrides config
-      --no-project      ignore pic.toml and project env detection
+      --no-project      ignore .pic/config.toml and project env detection
       --list-backends   list the backends and exit
 
 Environment: PIC_BACKEND, PIC_COMMAND, PIC_SHARE (colon-separated),
 PIC_PRESERVE (whitespace-separated), PIC_RUNTIME, PIC_NO_PROJECT.
 
 Configuration (schema in README.md):
-  ~/.config/pic/config.toml        user defaults
-  <project>/pic.toml         project overrides (project: PROJECT-DIR, else cwd)
+  ~/.config/pic/config.toml   user defaults
+  <project>/.pic/config.toml  project overrides (project: PROJECT-DIR, else cwd)
 
 Precedence (low to high):
-  builtin defaults < user pic.toml < project pic.toml < environment < flags
+  builtin defaults < user config.toml < project config.toml < environment < flags
 """
 
 import os
