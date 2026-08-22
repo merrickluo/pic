@@ -35,6 +35,8 @@ def run_pic(parsed, env=None):
         spec.project = backend.project_env(spec.workspace, config)
     try:
         backend.validate(spec, config, env)
+        if not parsed.dry_run:
+            backend.prepare(spec, config, env)
     except PicError as e:
         die(str(e))
     if parsed.dry_run:

@@ -52,6 +52,7 @@ class Config:
     guix_manifest: str | None = None           # default: ~/.config/pic/manifest.scm or shipped example
     guix_channels: list[str] = field(default_factory=list)
     guix_network: bool = True
+    guix_profile_cache: bool = True            # build once, launch with -p
 
     oci_driver: str = "auto"                   # podman | docker | auto
     oci_image: str = "ghcr.io/merrickluo/pi-agent:latest"
@@ -108,6 +109,8 @@ def _apply_toml(cfg, data, source):
         cfg.guix_channels = [str(c) for c in _as_list(guix["channels"])]
     if "network" in guix:
         cfg.guix_network = bool(guix["network"])
+    if "profile_cache" in guix:
+        cfg.guix_profile_cache = bool(guix["profile_cache"])
     oci = data.get("backend", {}).get("oci", {})
     if "driver" in oci:
         cfg.oci_driver = str(oci["driver"])

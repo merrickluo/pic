@@ -121,6 +121,18 @@ def test_bad_toml_dies(tmp_path, capsys):
     assert "bad configuration file" in capsys.readouterr().err
 
 
+# --- guix backend options --------------------------------------------
+
+def test_guix_profile_cache_default_on():
+    assert load().guix_profile_cache is True
+
+
+def test_guix_profile_cache_toml_off(tmp_path):
+    write_toml(tmp_path / ".pic" / "config.toml",
+               "[backend.guix]\nprofile_cache = false\n")
+    assert load(project_dir=str(tmp_path)).guix_profile_cache is False
+
+
 # --- default command ------------------------------------------------
 
 def test_toml_command(tmp_path):

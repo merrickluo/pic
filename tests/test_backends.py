@@ -30,7 +30,8 @@ def spec(workspace="/w", shares=("/s1", "/s2"), preserves=("^A_",),
 # --- guix backend ---------------------------------------------------
 
 def test_guix_manifest_mode_golden_argv():
-    cfg = Config(guix_manifest="/m.scm", guix_channels=["/ch"])
+    cfg = Config(guix_manifest="/m.scm", guix_channels=["/ch"],
+                 guix_profile_cache=False)
     argv = GuixBackend().build_argv(spec(), cfg, ENV)
     assert argv[:3] == ["guix", "shell", "-C"]
     assert "--network" in argv
@@ -41,14 +42,15 @@ def test_guix_manifest_mode_golden_argv():
 
 
 def test_guix_workspace_not_shared_twice():
-    cfg = Config()
+    cfg = Config(guix_profile_cache=False)
     s = spec(workspace="/w", shares=("/w", "/s1"))
     argv = GuixBackend().build_argv(s, cfg, ENV)
     assert argv.count("--share=/w") == 0
 
 
 def test_guix_channels_expand_tilde():
-    cfg = Config(guix_manifest="/m.scm", guix_channels=["~/ch"])
+    cfg = Config(guix_manifest="/m.scm", guix_channels=["~/ch"],
+                 guix_profile_cache=False)
     argv = GuixBackend().build_argv(spec(), cfg, ENV)
     assert "/home/tester/ch" in argv
 
@@ -59,14 +61,15 @@ def test_guix_manifest_expand_tilde(tmp_path):
     manifest.parent.mkdir(parents=True)
     manifest.write_text("(specifications->manifest '())\n")
     env = dict(ENV, HOME=str(home))
-    cfg = Config(guix_manifest="~/m.scm")
+    cfg = Config(guix_manifest="~/m.scm", guix_profile_cache=False)
     GuixBackend().validate(spec(), cfg, env)  # must not raise
     argv = GuixBackend().build_argv(spec(), cfg, env)
     assert str(manifest) in argv
 
 
 def test_guix_project_env_golden_argv():
-    cfg = Config(guix_channels=["/ch1", "/ch2"], guix_manifest="/m.scm")
+    cfg = Config(guix_channels=["/ch1", "/ch2"], guix_manifest="/m.scm",
+                 guix_profile_cache=False)
     project = ProjectEnv(container_args=["-D", "-f", "/w/guix.scm"])
     argv = GuixBackend().build_argv(spec(project=project), cfg, ENV)
     assert "-L" in argv and "/ch1" in argv and "/ch2" in argv
@@ -75,7 +78,7 @@ def test_guix_project_env_golden_argv():
 
 
 def test_guix_network_off():
-    cfg = Config(guix_network=False)
+    cfg = Config(guix_network=False, guix_profile_cache=False)
     argv = GuixBackend().build_argv(spec(), cfg, ENV)
     assert "--network" not in argv
 

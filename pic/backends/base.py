@@ -59,6 +59,10 @@ class Backend(ABC):
         """Raise PicError with a helpful message when the runtime cannot
         satisfy the spec (e.g. a missing agent profile)."""
 
+    def prepare(self, spec, config, env):
+        """Materialize whatever build_argv references (e.g. build a cached
+        profile).  Default: nothing.  Not called on --dry-run."""
+
     @abstractmethod
     def build_argv(self, spec, config, env):
         """Return the full argv to execute (spec.command is the inner
