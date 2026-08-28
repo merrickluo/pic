@@ -8,7 +8,8 @@
 ;;;
 ;;; Adjust the specifications to what your channels provide.
 
-(use-modules (guix profiles)
+(use-modules (gnu packages)            ; specifications->manifest
+             (guix profiles)           ; packages->manifest, concatenate-manifests
              ((gnu packages curl) #:select (curl)))
 
 (concatenate-manifests
