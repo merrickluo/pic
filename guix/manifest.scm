@@ -8,18 +8,20 @@
 ;;;
 ;;; Adjust the specifications to what your channels provide.
 
-(use-modules (guix profiles))
+(use-modules (guix profiles)
+             ((gnu packages curl) #:select (curl)))
 
-(specifications->manifest
- (list "pi-coding-agent"
-       "python"
-       "bash"
-       "git"
-       "openssh"
-       "nss-certs"
-       "coreutils"
-       "curl"
-       "gnupg"
-       "fd"
-       "ripgrep"
-       "mise"))
+(concatenate-manifests
+ (list (packages->manifest (list curl))
+       (specifications->manifest
+        (list "pi-coding-agent"
+              "python"
+              "bash"
+              "git"
+              "openssh"
+              "nss-certs"
+              "coreutils"
+              "gnupg"
+              "fd"
+              "ripgrep"
+              "mise"))))
