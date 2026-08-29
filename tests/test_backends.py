@@ -296,21 +296,21 @@ def test_select_backend_explicit(monkeypatch):
 
 
 def test_select_backend_auto_prefers_guix(monkeypatch):
-    monkeypatch.setattr(BACKENDS["guix"], "available", lambda: True)
-    monkeypatch.setattr(BACKENDS["oci"], "available", lambda: True)
+    monkeypatch.setattr(GuixBackend, "available", lambda self: True)
+    monkeypatch.setattr(OciBackend, "available", lambda self: True)
     assert select_backend(Config()) is BACKENDS["guix"]
 
 
 def test_select_backend_auto_falls_back_to_oci(monkeypatch):
-    monkeypatch.setattr(BACKENDS["guix"], "available", lambda: False)
-    monkeypatch.setattr(BACKENDS["oci"], "available", lambda: True)
+    monkeypatch.setattr(GuixBackend, "available", lambda self: False)
+    monkeypatch.setattr(OciBackend, "available", lambda self: True)
     assert select_backend(Config()) is BACKENDS["oci"]
 
 
 def test_select_backend_auto_falls_back_to_apple(monkeypatch):
-    monkeypatch.setattr(BACKENDS["guix"], "available", lambda: False)
-    monkeypatch.setattr(BACKENDS["oci"], "available", lambda: False)
-    monkeypatch.setattr(BACKENDS["apple"], "available", lambda: True)
+    monkeypatch.setattr(GuixBackend, "available", lambda self: False)
+    monkeypatch.setattr(OciBackend, "available", lambda self: False)
+    monkeypatch.setattr(AppleBackend, "available", lambda self: True)
     assert select_backend(Config()) is BACKENDS["apple"]
 
 
