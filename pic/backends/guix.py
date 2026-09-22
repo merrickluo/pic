@@ -25,7 +25,7 @@ from pathlib import Path
 
 from ..spec import ProjectEnv
 from ..util import PicError, expand_path
-from .base import Backend
+from .base import Backend, shimmed
 
 
 def profiles_root(env):
@@ -163,7 +163,7 @@ class GuixBackend(Backend):
             argv += ["-p", str(profile)]
         else:
             argv += self._package_args(spec, config, env)
-        argv += ["--"] + spec.command
+        argv += ["--", *shimmed(spec.command)]
         return argv
 
     def _cached_profile(self, spec, config, env):

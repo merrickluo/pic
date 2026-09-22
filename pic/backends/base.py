@@ -34,9 +34,20 @@ def home_env(env):
     return f"HOME={expand_path('~', env)}"
 
 
+#: Wraps the inner command: container homes may be created with loose
+#: modes (guix's tmpfs $HOME is 1777), which OpenSSH's StrictModes
+#: rejects.  chmod before exec'ing; ignore failures (read-only home).
+HOME_SHIM = 'chmod 755 "$HOME" 2>/dev/null; exec "$@"'
+
+
+def shimmed(command):
+    """COMMAND wrapped in the $HOME-chmod shim: sh -c SHIM sh CMD...."""
+    return ["sh", "-c", HOME_SHIM, "sh", *command]
+
+
 def run_tail(spec, image):
     """Shared docker-shaped argv tail: workdir, image, inner command."""
-    return ["-w", str(spec.workspace), image, *spec.command]
+    return ["-w", str(spec.workspace), image, *shimmed(spec.command)]
 
 
 class Backend(ABC):

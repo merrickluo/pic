@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 import pic.launch
+from pic.backends.base import HOME_SHIM
 from pic.backends.guix import GuixBackend
 from pic.cli import Parsed
 from pic.config import Config
@@ -101,7 +102,8 @@ def test_cached_argv_uses_profile_not_manifest(tmp_path):
     profile = profile_arg(argv)
     assert profile.parent == Path(env["HOME"]) / ".local/share/pic/profiles"
     assert len(profile.name) == 64  # sha256 hex
-    assert argv[-3:] == ["--", "pi", "--continue"]
+    assert argv[-7:] == ["--", "sh", "-c", HOME_SHIM, "sh", "pi",
+                         "--continue"]
 
 
 def test_cached_argv_keeps_shares_and_network(tmp_path):

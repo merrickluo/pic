@@ -12,6 +12,9 @@ from pic.spec import ProjectEnv, RuntimeSpec
 from pic.util import PicError
 from pathlib import Path
 
+#: The home-chmod shim wrapping every inner command (see base.home_shim).
+SHIM = 'chmod 755 "$HOME" 2>/dev/null; exec "$@"'
+
 ENV = {"HOME": "/home/tester", "PATH": "/bin"}
 
 
@@ -38,7 +41,17 @@ def test_guix_manifest_mode_golden_argv():
     assert "--share=/s1" in argv and "--share=/s2" in argv
     assert "--preserve=^A_" in argv
     assert "-L" in argv and "/ch" in argv
-    assert argv[-5:] == ["-m", "/m.scm", "--", "pi", "--continue"]
+    assert argv[-9:] == ["-m", "/m.scm", "--", "sh", "-c", SHIM, "sh",
+                         "pi", "--continue"]
+
+
+def test_guix_home_chmod_shim():
+    """guix shell -C creates the tmpfs $HOME mode 1777, which OpenSSH's
+    StrictModes rejects; the shim restores 755 before exec'ing."""
+    cfg = Config(guix_profile_cache=False)
+    argv = GuixBackend().build_argv(spec(), cfg, ENV)
+    assert argv[-6:-1] == ["sh", "-c", SHIM, "sh", "pi"]
+    assert argv[-1] == "--continue"
 
 
 def test_guix_workspace_not_shared_twice():
@@ -74,7 +87,8 @@ def test_guix_project_env_golden_argv():
     argv = GuixBackend().build_argv(spec(project=project), cfg, ENV)
     assert "-L" in argv and "/ch1" in argv and "/ch2" in argv
     assert "-m" in argv and "/m.scm" in argv
-    assert argv[-6:] == ["-D", "-f", "/w/guix.scm", "--", "pi", "--continue"]
+    assert argv[-10:] == ["-D", "-f", "/w/guix.scm", "--", "sh", "-c",
+                          SHIM, "sh", "pi", "--continue"]
 
 
 def test_guix_network_off():
@@ -151,8 +165,8 @@ def test_oci_golden_argv(monkeypatch):
                         "--user", "1000:1000", "--network", "host"]
     assert "-v/s1:/s1" in argv and "-v/s2:/s2" in argv
     assert "-e" in argv and "ANTHROPIC_API_KEY=sk-123" in argv
-    assert argv[-5:] == ["-w", "/w", "ghcr.io/merrickluo/pi-agent:latest",
-                         "pi", "--continue"]
+    assert argv[-9:] == ["-w", "/w", "ghcr.io/merrickluo/pi-agent:latest",
+                         "sh", "-c", SHIM, "sh", "pi", "--continue"]
 
 
 def test_oci_sets_home_env(monkeypatch):
@@ -248,7 +262,7 @@ def test_apple_golden_argv(monkeypatch):
     assert not any(a.startswith("-v") for a in argv)
     assert "-e" in argv and "ANTHROPIC_API_KEY" in argv
     assert "sk-123" not in argv  # bare key; the tool inherits the value
-    assert argv[-4:] == ["-w", "/w", "img:1", "pi"]
+    assert argv[-8:] == ["-w", "/w", "img:1", "sh", "-c", SHIM, "sh", "pi"]
 
 
 def test_apple_sets_home_env(monkeypatch):
