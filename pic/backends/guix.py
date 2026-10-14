@@ -10,10 +10,9 @@ Profile cache: evaluating the manifest and channels costs several
 seconds per launch, so by default the profile is materialized once per
 cache key (`guix shell --root=PROFILE ... -- true`) and containers
 launch with `-p PROFILE`.  The key covers the guix store path, the
-agent manifest, the project env file, and each channel's HEAD commit
-plus untracked *.scm files.  A channel checkout with tracked
-modifications bypasses the cache (direct `-L/-m` mode), so live
-channel development always sees the current tree.  Disable with
+agent manifest, the project env file, and each channel's HEAD commit.
+Uncommitted channel changes do not invalidate the cache: commit them
+(or set `profile_cache = false`) to pick them up.  Disable with
 `[backend.guix] profile_cache = false`.
 """
 
@@ -42,29 +41,15 @@ def _guix_id(env):
 
 
 def _channel_state(path):
-    """(commit, untracked-scm) for a clean checkout, or None when the
-    worktree has tracked modifications (which bypass the cache)."""
+    """HEAD commit of the channel checkout; uncommitted changes are
+    deliberately ignored."""
     try:
-        out = subprocess.run(
-            ["git", "-C", path, "status", "--porcelain=v2", "--branch",
-             "--untracked-files=all"],
-            capture_output=True, text=True, check=True).stdout
+        return subprocess.run(
+            ["git", "-C", path, "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         # not a git checkout (or no git): the dir mtime is all we have
-        return (f"mtime:{os.stat(path).st_mtime_ns}", [])
-    commit = "(no commits)"
-    untracked = []
-    for line in out.splitlines():
-        if line.startswith("# branch.oid "):
-            commit = line.rsplit(None, 1)[-1]
-        elif line.startswith("? "):
-            name = line[2:]
-            if name.endswith(".scm"):  # only .scm files reach guix -L
-                st = os.stat(os.path.join(path, name))
-                untracked.append((name, st.st_mtime_ns, st.st_size))
-        elif not line.startswith("# "):
-            return None
-    return (commit, sorted(untracked))
+        return f"mtime:{os.stat(path).st_mtime_ns}"
 
 
 def _project_env_parts(spec):
@@ -77,7 +62,7 @@ def _project_env_parts(spec):
 
 def profile_path(spec, config, env):
     """The cached profile for these inputs, or None to run uncached
-    (`profile_cache = false`, or a channel worktree is dirty)."""
+    (`profile_cache = false`)."""
     if not config.guix_profile_cache:
         return None
     h = hashlib.sha256()
@@ -87,13 +72,7 @@ def profile_path(spec, config, env):
     h.update(Path(manifest).read_bytes())
     for channel in config.guix_channels:
         path = expand_path(channel, env)
-        state = _channel_state(path)
-        if state is None:
-            return None
-        commit, untracked = state
-        h.update(f"channel\0{path}\0{commit}\0".encode())
-        for name, mtime, size in untracked:
-            h.update(f"{name}\0{mtime}\0{size}\0".encode())
+        h.update(f"channel\0{path}\0{_channel_state(path)}\0".encode())
     for mode, path in _project_env_parts(spec):
         h.update(f"project\0{mode}\0".encode())
         h.update(Path(path).read_bytes())

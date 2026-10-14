@@ -3,9 +3,8 @@
 The cache builds the agent profile once per cache key with
 `guix shell --root=PROFILE ... -- true` and then launches containers
 with `guix shell -C -p PROFILE`, skipping manifest/channel evaluation
-on every launch.  A channel checkout with tracked modifications
-bypasses the cache (direct `-L/-m` mode) so live channel development
-always sees the current tree.
+on every launch.  A channel enters the key only by its HEAD commit:
+uncommitted changes never invalidate the cache.
 """
 
 import subprocess
@@ -172,43 +171,28 @@ def test_key_stable_across_backends(tmp_path):
         == profile_arg(GuixBackend().build_argv(spec(), cfg, env))
 
 
-def test_untracked_scm_file_changes_key_but_stays_cached(tmp_path):
+def test_untracked_scm_file_keeps_key(tmp_path):
     cfg, env = cached_setup(tmp_path)
     first = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
-    channel = Path(cfg.guix_channels[0])
-    new_file = channel / "new.scm"
-    new_file.write_text("(define-public n 1)\n")
-    argv = GuixBackend().build_argv(spec(), cfg, env)
-    assert "-p" in argv  # still cached
-    assert profile_arg(argv) != first
-
-
-def test_untracked_non_scm_file_ignored(tmp_path):
-    cfg, env = cached_setup(tmp_path)
-    first = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
-    (Path(cfg.guix_channels[0]) / "notes.md").write_text("hello\n")
+    (Path(cfg.guix_channels[0]) / "new.scm").write_text("(define n 1)\n")
     assert profile_arg(GuixBackend().build_argv(spec(), cfg, env)) == first
 
 
-# --- direct mode on dirty channels -----------------------------------
-
-def test_tracked_modification_forces_direct_mode(tmp_path):
+def test_tracked_modification_keeps_key(tmp_path):
     cfg, env = cached_setup(tmp_path)
-    x_scm = Path(cfg.guix_channels[0]) / "x.scm"
-    x_scm.write_text("(define-public x 42)\n")  # modified, not committed
-    argv = GuixBackend().build_argv(spec(), cfg, env)
-    assert "-p" not in argv
-    assert "-m" in argv and "-L" in argv
+    first = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
+    (Path(cfg.guix_channels[0]) / "x.scm").write_text("(define x 42)\n")
+    assert profile_arg(GuixBackend().build_argv(spec(), cfg, env)) == first
 
 
-def test_staged_change_forces_direct_mode(tmp_path):
+def test_staged_change_keeps_key(tmp_path):
     cfg, env = cached_setup(tmp_path)
+    first = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
     x_scm = Path(cfg.guix_channels[0]) / "x.scm"
-    x_scm.write_text("(define-public x 42)\n")
+    x_scm.write_text("(define x 42)\n")
     subprocess.run(["git", "-C", str(x_scm.parent), "add", "x.scm"],
                    check=True)
-    argv = GuixBackend().build_argv(spec(), cfg, env)
-    assert "-p" not in argv
+    assert profile_arg(GuixBackend().build_argv(spec(), cfg, env)) == first
 
 
 # --- prepare: building the profile -----------------------------------
@@ -262,13 +246,13 @@ def test_prepare_build_failure_raises(tmp_path, monkeypatch):
         GuixBackend().prepare(spec(), cfg, env)
 
 
-def test_prepare_direct_mode_builds_nothing(tmp_path, monkeypatch):
+def test_prepare_builds_profile_on_dirty_channel(tmp_path, monkeypatch):
     cfg, env = cached_setup(tmp_path)
     (Path(cfg.guix_channels[0]) / "x.scm").write_text("(define x 2)\n")
     calls = []
     monkeypatch.setattr(subprocess, "run", fake_run(calls))
     GuixBackend().prepare(spec(), cfg, env)
-    assert calls == []
+    assert len(calls) == 1
 
 
 # --- launch orchestration --------------------------------------------

@@ -92,9 +92,8 @@ ssh = true                  # forward the SSH agent socket
   root) under `$XDG_DATA_HOME/pic/profiles/` and containers launch with
   `-p PROFILE`.  The key covers the guix store path (i.e. `guix pull`),
   the agent manifest, the project env file, and each channel's HEAD
-  commit plus untracked `*.scm` files.  A channel checkout with tracked
-  modifications bypasses the cache and launches in direct `-L/-m` mode,
-  so live channel development always sees the current tree.  Old
+  commit.  Uncommitted channel changes do not invalidate the cache:
+  commit them (or set `profile_cache = false`) to pick them up.  Old
   profiles are left in place (they are GC roots); prune
   `$XDG_DATA_HOME/pic/profiles/` by hand if it grows.
 - **oci** — podman or docker with a prebuilt agent image. Env preserve
