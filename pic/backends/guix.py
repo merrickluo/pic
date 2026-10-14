@@ -12,7 +12,10 @@ cache key (`guix shell --root=PROFILE ... -- true`) and containers
 launch with `-p PROFILE`.  The key covers the guix store path, the
 agent manifest, the project env file, and each channel's HEAD commit.
 Uncommitted channel changes do not invalidate the cache: commit them
-(or set `profile_cache = false`) to pick them up.  Disable with
+(or set `profile_cache = false`) to pick them up.  Profiles live at
+ROOT/BASE-KEY/PROJECT-KEY; after a profile is built, every other
+base dir is pruned, so only per-project profiles of the current
+guix/manifest/channels remain.  Disable with
 `[backend.guix] profile_cache = false`.
 """
 
@@ -61,22 +64,36 @@ def _project_env_parts(spec):
 
 
 def profile_path(spec, config, env):
-    """The cached profile for these inputs, or None to run uncached
-    (`profile_cache = false`)."""
+    """The cached profile `ROOT/BASE-KEY/PROJECT-KEY` for these inputs,
+    or None to run uncached (`profile_cache = false`).  BASE-KEY covers
+    what all projects share; PROJECT-KEY the project env file."""
     if not config.guix_profile_cache:
         return None
-    h = hashlib.sha256()
-    h.update(f"guix\0{_guix_id(env)}\0".encode())
+    base = hashlib.sha256()
+    base.update(f"guix\0{_guix_id(env)}\0".encode())
     manifest = expand_path(str(config.guix_manifest), env)
-    h.update(b"manifest\0")
-    h.update(Path(manifest).read_bytes())
+    base.update(b"manifest\0")
+    base.update(Path(manifest).read_bytes())
     for channel in config.guix_channels:
         path = expand_path(channel, env)
-        h.update(f"channel\0{path}\0{_channel_state(path)}\0".encode())
+        base.update(f"channel\0{path}\0{_channel_state(path)}\0".encode())
+    project = hashlib.sha256()
     for mode, path in _project_env_parts(spec):
-        h.update(f"project\0{mode}\0".encode())
-        h.update(Path(path).read_bytes())
-    return profiles_root(env) / h.hexdigest()
+        project.update(f"project\0{mode}\0".encode())
+        project.update(Path(path).read_bytes())
+    return profiles_root(env) / base.hexdigest() / project.hexdigest()
+
+
+def prune_stale_bases(profile):
+    """Remove every entry of the profiles root except PROFILE's base
+    dir.  Entries are GC roots only; `guix gc` frees the store."""
+    for entry in profile.parent.parent.iterdir():
+        if entry == profile.parent:
+            continue
+        if entry.is_dir() and not entry.is_symlink():
+            shutil.rmtree(entry, ignore_errors=True)
+        else:
+            entry.unlink(missing_ok=True)
 
 
 class GuixBackend(Backend):
@@ -129,6 +146,7 @@ class GuixBackend(Backend):
             raise PicError(
                 f"pic: building the agent profile failed "
                 f"(guix exited {e.returncode})") from e
+        prune_stale_bases(profile)
 
     def build_argv(self, spec, config, env):
         argv = ["guix", "shell", "-C"]

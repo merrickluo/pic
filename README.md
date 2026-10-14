@@ -93,9 +93,12 @@ ssh = true                  # forward the SSH agent socket
   `-p PROFILE`.  The key covers the guix store path (i.e. `guix pull`),
   the agent manifest, the project env file, and each channel's HEAD
   commit.  Uncommitted channel changes do not invalidate the cache:
-  commit them (or set `profile_cache = false`) to pick them up.  Old
-  profiles are left in place (they are GC roots); prune
-  `$XDG_DATA_HOME/pic/profiles/` by hand if it grows.
+  commit them (or set `profile_cache = false`) to pick them up.
+  Profiles are stored as `BASE-KEY/PROJECT-KEY` (base: guix, manifest,
+  channels; project: the project env file).  After pic builds a
+  profile it removes every other base, so stale profiles disappear
+  and the per-project profiles of the current base stay.  They are
+  only GC roots: run `guix gc` to free the store.
 - **oci** — podman or docker with a prebuilt agent image. Env preserve
   regexps are expanded against the host environment. The container runs
   as the host uid:gid (`--user`, plus `--userns=keep-id` for rootless

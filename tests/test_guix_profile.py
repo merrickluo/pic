@@ -7,6 +7,7 @@ on every launch.  A channel enters the key only by its HEAD commit:
 uncommitted changes never invalidate the cache.
 """
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -99,8 +100,9 @@ def test_cached_argv_uses_profile_not_manifest(tmp_path):
     assert argv[:3] == ["guix", "shell", "-C"]
     assert "-m" not in argv and "-L" not in argv
     profile = profile_arg(argv)
-    assert profile.parent == Path(env["HOME"]) / ".local/share/pic/profiles"
-    assert len(profile.name) == 64  # sha256 hex
+    root = Path(env["HOME"]) / ".local/share/pic/profiles"
+    assert profile.parent.parent == root  # root/<base-key>/<project-key>
+    assert len(profile.parent.name) == 64 and len(profile.name) == 64
     assert argv[-7:] == ["--", "sh", "-c", HOME_SHIM, "sh", "pi",
                          "--continue"]
 
@@ -163,6 +165,24 @@ def test_key_changes_with_project_env_mode(tmp_path):
     plain = ProjectEnv(container_args=["-m", str(guix_scm)])
     assert profile_arg(GuixBackend().build_argv(spec(project=dev), cfg, env)) \
         != profile_arg(GuixBackend().build_argv(spec(project=plain), cfg, env))
+
+
+def test_project_env_changes_only_project_key(tmp_path):
+    cfg, env = cached_setup(tmp_path)
+    project = ProjectEnv(container_args=["-m", str(manifest(tmp_path, "p.scm"))])
+    bare = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
+    with_project = profile_arg(
+        GuixBackend().build_argv(spec(project=project), cfg, env))
+    assert bare.parent == with_project.parent
+    assert bare.name != with_project.name
+
+
+def test_channel_commit_changes_base_key(tmp_path):
+    cfg, env = cached_setup(tmp_path)
+    first = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
+    commit_all(Path(cfg.guix_channels[0]), "bump")
+    second = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
+    assert first.parent != second.parent
 
 
 def test_key_stable_across_backends(tmp_path):
@@ -253,6 +273,56 @@ def test_prepare_builds_profile_on_dirty_channel(tmp_path, monkeypatch):
     monkeypatch.setattr(subprocess, "run", fake_run(calls))
     GuixBackend().prepare(spec(), cfg, env)
     assert len(calls) == 1
+
+
+# --- pruning stale profiles -----------------------------------------
+
+def fake_profile(path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.symlink_to("/gnu/store/fake-profile")
+
+
+def test_prepare_prunes_other_bases_after_build(tmp_path, monkeypatch):
+    cfg, env = cached_setup(tmp_path)
+    old = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
+    fake_profile(old)
+    root = old.parent.parent
+    legacy = root / ("0" * 64)  # flat layout from older pic
+    legacy.symlink_to("/gnu/store/legacy-profile")
+    commit_all(Path(cfg.guix_channels[0]), "bump")
+    monkeypatch.setattr(subprocess, "run", fake_run([]))
+    backend = GuixBackend()
+    backend.prepare(spec(), cfg, env)
+    current_base = profile_arg(backend.build_argv(spec(), cfg, env)).parent
+    assert sorted(root.iterdir()) == [current_base]
+
+
+def test_prepare_keeps_other_projects_of_current_base(tmp_path, monkeypatch):
+    cfg, env = cached_setup(tmp_path)
+    project = ProjectEnv(container_args=["-m", str(manifest(tmp_path, "p.scm"))])
+    other = profile_arg(GuixBackend().build_argv(spec(project=project),
+                                                 cfg, env))
+    fake_profile(other)
+    monkeypatch.setattr(subprocess, "run", fake_run([]))
+    GuixBackend().prepare(spec(), cfg, env)
+    assert os.path.lexists(other)
+
+
+def test_prepare_failure_keeps_old_bases(tmp_path, monkeypatch):
+    cfg, env = cached_setup(tmp_path)
+    old = profile_arg(GuixBackend().build_argv(spec(), cfg, env))
+    fake_profile(old)
+    commit_all(Path(cfg.guix_channels[0]), "bump")
+
+    def fail(argv, **kw):
+        if argv[0] == "guix":
+            raise subprocess.CalledProcessError(1, argv)
+        return subprocess.CompletedProcess(argv, 0, stdout="x\n")
+
+    monkeypatch.setattr(subprocess, "run", fail)
+    with pytest.raises(PicError):
+        GuixBackend().prepare(spec(), cfg, env)
+    assert os.path.lexists(old)
 
 
 # --- launch orchestration --------------------------------------------
