@@ -308,6 +308,23 @@ def test_prepare_keeps_other_projects_of_current_base(tmp_path, monkeypatch):
     assert os.path.lexists(other)
 
 
+def test_prepare_replaces_legacy_profile_at_base_path(tmp_path, monkeypatch):
+    """A flat-layout profile can have the same name as the new base dir;
+    it points into the read-only store, so guix cannot create the
+    profile inside it."""
+    cfg, env = cached_setup(tmp_path)
+    backend = GuixBackend()
+    base = profile_arg(backend.build_argv(spec(), cfg, env)).parent
+    store_profile = tmp_path / "store-profile"
+    store_profile.mkdir()
+    base.parent.mkdir(parents=True)
+    base.symlink_to(store_profile)
+    monkeypatch.setattr(subprocess, "run", fake_run([]))
+    backend.prepare(spec(), cfg, env)
+    assert base.is_dir() and not base.is_symlink()
+    assert list(store_profile.iterdir()) == []
+
+
 def test_prepare_failure_keeps_old_bases(tmp_path, monkeypatch):
     cfg, env = cached_setup(tmp_path)
     old = profile_arg(GuixBackend().build_argv(spec(), cfg, env))

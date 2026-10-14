@@ -136,6 +136,8 @@ class GuixBackend(Backend):
         profile = self._cached_profile(spec, config, env)
         if profile is None or os.path.lexists(profile):
             return
+        if profile.parent.is_symlink():  # flat-layout profile of older pic
+            profile.parent.unlink()
         profile.parent.mkdir(parents=True, exist_ok=True)
         argv = ["guix", "shell", f"--root={profile}"]
         argv += self._package_args(spec, config, env)
